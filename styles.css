@@ -1,0 +1,84 @@
+@keyframes pulse-effect {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.pulse-animation {
+    animation: pulse-effect 1s infinite;
+}
+
+.intensity-bar {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e5e7eb;
+}
+
+.intensity-fill {
+    height: 100%;
+    border-radius: 4px;
+    background-image: linear-gradient(90deg, #5D5CDE, #8A2BE2, #F72585);
+}
+
+.dark .intensity-bar {
+    background-color: #374151;
+}
+
+/* Timer display */
+.timer-display {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+}
+
+/* Workout history card */
+.workout-card {
+    transition: all 0.2s ease;
+}
+
+.workout-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Visualization canvas */
+#beatVisualization {
+    width: 100%;
+    height: 60px;
+}
+
+/* Gradient text */
+.gradient-text {
+    background: linear-gradient(90deg, #5D5CDE, #8A2BE2, #F72585);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Gradient button */
+.gradient-btn {
+    background-image: linear-gradient(90deg, #5D5CDE, #8A2BE2, #F72585);
+    transition: all 0.3s ease;
+}
+
+.gradient-btn:hover {
+    background-image: linear-gradient(90deg, #4A49B1, #7A1ECB, #D61E70);
+    box-shadow: 0 4px 12px rgba(137, 43, 226, 0.3);
+}
+
+/* Dark mode toggle */
+.theme-toggle {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+    transform: rotate(15deg);
+}
+
+/* Progress bar */
+.gradient-progress {
+    background-image: linear-gradient(90deg, #5D5CDE, #8A2BE2, #F72585);
+}

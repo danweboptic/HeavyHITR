@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#5D5CDE">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>HeavyHITR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-light': '#7A79E3',
+                        'primary-dark': '#4A49B1',
+                        dark: {
+                            bg: '#121212',
+                            card: '#1E1E1E',
+                            text: '#E0E0E0'
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-primary': 'linear-gradient(90deg, #5D5CDE, #8A2BE2, #F72585)',
+                        'gradient-primary-vertical': 'linear-gradient(180deg, #5D5CDE, #8A2BE2, #F72585)'
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body class="bg-white dark:bg-dark-bg text-gray-800 dark:text-dark-text min-h-screen">
+    <div class="container max-w-4xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8 relative">
+            <button id="themeToggle" class="absolute right-2 top-2 p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white theme-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 gradient-text">HeavyHITR</h1>
+            <p class="text-gray-600 dark:text-gray-400">Create your custom heavy bag workout with voice guidance and rhythm</p>
+        </header>
+
+        <!-- Main content area with tabs -->
+        <div class="mb-8">
+            <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                <button id="configTab" class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 active-tab">
+                    Create Workout
+                </button>
+                <button id="historyTab" class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    Workout History
+                </button>
+            </div>
+
+            <!-- Workout Configuration Screen -->
+            <div id="configScreen" class="block">
+                <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md mb-6 border border-transparent dark:border-gray-700">
+                    <h2 class="text-xl font-bold mb-4 gradient-text">Workout Settings</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- Round Duration -->
+                        <div>
+                            <label for="roundDuration" class="block text-sm font-medium mb-1">Round Duration (seconds)</label>
+                            <input type="number" id="roundDuration" value="60" min="10" max="180" step="5"
+                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        </div>
+
+                        <!-- Rest Duration -->
+                        <div>
+                            <label for="restDuration" class="block text-sm font-medium mb-1">Rest Duration (seconds)</label>
+                            <input type="number" id="restDuration" value="30" min="5" max="90" step="5"
+                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- Number of Rounds -->
+                        <div>
+                            <label for="numRounds" class="block text-sm font-medium mb-1">Number of Rounds</label>
+                            <input type="number" id="numRounds" value="3" min="1" max="12"
+                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        </div>
+
+                        <!-- Intensity Level -->
+                        <div>
+                            <label for="intensityLevel" class="block text-sm font-medium mb-1">Intensity Level</label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="intensityLevel" min="1" max="5" step="1" value="3"
+                                    class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary">
+                                <span id="intensityDisplay" class="text-sm font-medium">Medium</span>
+                            </div>
+                            <div class="intensity-bar mt-2">
+                                <div id="intensityFill" class="intensity-fill" style="width: 60%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workout Type -->
+                    <div class="mb-6">
+                        <label for="workoutType" class="block text-sm font-medium mb-1">Workout Type</label>
+                        <select id="workoutType" class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                            <option value="technical">Technical Focus</option>
+                            <option value="power">Power Focus</option>
+                            <option value="speed">Speed Focus</option>
+                            <option value="beginner" selected>Beginner Mix</option>
+                            <option value="intermediate">Intermediate Mix</option>
+                            <option value="advanced">Advanced Mix</option>
+                            <option value="pyramid">Pyramid (Build-up & Cool-down)</option>
+                        </select>
+                    </div>
+
+                    <!-- Workout Name -->
+                    <div class="mb-6">
+                        <label for="workoutName" class="block text-sm font-medium mb-1">Workout Name (for saving)</label>
+                        <input type="text" id="workoutName" placeholder="My Boxing Workout"
+                            class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                    </div>
+
+                    <!-- Generate Workout Button -->
+                    <button id="generateWorkoutBtn" class="w-full gradient-btn text-white font-bold py-3 px-4 rounded-md transition-colors">
+                        Generate Workout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workout History Screen (hidden by default) -->
+            <div id="historyScreen" class="hidden">
+                <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md border border-transparent dark:border-gray-700">
+                    <h2 class="text-xl font-bold mb-4 gradient-text">Your Saved Workouts</h2>
+
+                    <div id="emptyHistoryMessage" class="py-6 text-center text-gray-500 dark:text-gray-400">
+                        <p>No workouts saved yet. Create your first workout!</p>
+                    </div>
+
+                    <div id="workoutHistoryList" class="space-y-3">
+                        <!-- Workout cards will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Execution Screen (hidden by default) -->
+        <div id="workoutScreen" class="hidden">
+            <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md mb-6 border border-transparent dark:border-gray-700">
+                <div class="text-center mb-6">
+                    <h2 id="workoutStatus" class="text-2xl font-bold mb-2 gradient-text">Preparing Workout...</h2>
+                    <p id="currentExercise" class="text-lg text-gray-700 dark:text-gray-300">Get ready!</p>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        <span>Round <span id="currentRound">0</span>/<span id="totalRounds">0</span></span>
+                        <span id="roundType" class="font-medium">-</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6">
+                        <div id="progressBar" class="gradient-progress h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-center mb-4">
+                        <div id="timerDisplay" class="timer-display text-5xl md:text-7xl font-bold gradient-text">00:00</div>
+                    </div>
+                </div>
+
+                <!-- Beat visualization -->
+                <div class="mb-4">
+                    <canvas id="beatVisualization" class="w-full rounded-lg bg-black/10 dark:bg-white/5"></canvas>
+                </div>
+
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button id="startPauseBtn" class="gradient-btn text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
+                        Start
+                    </button>
+                    <button id="resetBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors">
+                        Reset
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button id="volumeBtn" class="text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                        </button>
+                        <input type="range" id="volumeControl" min="0" max="100" value="70" class="w-20 md:w-32 h-2 ml-1 accent-primary">
+                    </div>
+                    <button id="backToConfigBtn" class="gradient-text hover:underline">
+                        Back to Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+
+            themeToggle.addEventListener('click', function() {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            });
+
+            // Check for saved theme preference or use system preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+
+            // Update intensity fill based on slider
+            const intensitySlider = document.getElementById('intensityLevel');
+            const intensityFill = document.getElementById('intensityFill');
+
+            function updateIntensity() {
+                const value = intensitySlider.value;
+                const percentage = ((value - 1) / 4) * 100;
+                intensityFill.style.width = `${percentage}%`;
+
+                const intensityTexts = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
+                document.getElementById('intensityDisplay').textContent = intensityTexts[value-1];
+            }
+
+            intensitySlider.addEventListener('input', updateIntensity);
+            updateIntensity(); // Initialize
+
+            // Tab functionality (simplified version)
+            const configTab = document.getElementById('configTab');
+            const historyTab = document.getElementById('historyTab');
+            const configScreen = document.getElementById('configScreen');
+            const historyScreen = document.getElementById('historyScreen');
+
+            configTab.addEventListener('click', function() {
+                configScreen.classList.remove('hidden');
+                historyScreen.classList.add('hidden');
+                configTab.classList.add('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
+                historyTab.classList.remove('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
+            });
+
+            historyTab.addEventListener('click', function() {
+                configScreen.classList.add('hidden');
+                historyScreen.classList.remove('hidden');
+                historyTab.classList.add('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
+                configTab.classList.remove('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
+            });
+
+            // Initialize tabs
+            configTab.click();
+        });
+
+        // Add this script at the bottom of your index.html
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+              .then(registration => {
+                console.log('Service Worker registered: ', registration);
+              })
+              .catch(error => {
+                console.log('Service Worker registration failed: ', error);
+              });
+          });
+        }
+    </script>
+</body>
+</html>
