@@ -108,19 +108,18 @@ class App {
                 exerciseTemplates: exerciseTemplates
             };
 
-            const workout = this.workoutGenerator.generateWorkout();
+            // Set workout name
+            const workoutName = document.getElementById('workoutName').value;
+            settings.workoutName = workoutName ||
+                `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
+
+            const workout = this.workoutGenerator.generateWorkout(settings);
             if (workout) {
                 this.currentWorkout = workout;
                 this.uiController.toggleWorkoutTab(true); // Show workout tab
                 this.uiController.updateUI(workout);
             }
 
-            // Set workout name
-            const workoutName = document.getElementById('workoutName').value;
-            settings.workoutName = workoutName ||
-                `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
-
-            this.workoutManager.generateWorkout(settings);
             this.storageManager.saveWorkout(this.workoutManager.getWorkout());
             this.uiController.showScreen('workout');
         } catch (error) {
