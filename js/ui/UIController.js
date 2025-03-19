@@ -5,19 +5,52 @@ class UIController {
             workout: document.getElementById('workoutScreen'),
             history: document.getElementById('historyScreen')
         };
+
+        // Tab configuration
+        this.tabs = new Map([
+            ['config', { id: 'configTab', label: 'Create Workout' }],
+            ['workout', { id: 'workoutTab', label: 'Current Workout' }],
+            ['history', { id: 'historyTab', label: 'Workout History' }]
+        ]);
+
+        // Tab styling classes
+        this.tabClasses = {
+            base: 'py-2 px-4 font-medium border-b-2',
+            inactive: 'border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
+            active: 'border-primary dark:border-primary-light text-gray-900 dark:text-white'
+        };
     }
 
     showScreen(screenId) {
+        // Hide all screens first
         Object.values(this.screens).forEach(screen => {
             if (screen) {
                 screen.classList.add('hidden');
             }
         });
 
+        // Show the target screen
         const targetScreen = this.screens[screenId];
         if (targetScreen) {
             targetScreen.classList.remove('hidden');
         }
+
+        // Update tab states
+        this.updateTabStates(screenId);
+    }
+
+    updateTabStates(activeTabId) {
+        this.tabs.forEach((tabConfig, tabId) => {
+            const tabElement = document.getElementById(tabConfig.id);
+            if (tabElement) {
+                const isActive = tabId === activeTabId;
+                const classes = [
+                    this.tabClasses.base,
+                    isActive ? this.tabClasses.active : this.tabClasses.inactive
+                ];
+                tabElement.className = classes.join(' ');
+            }
+        });
     }
 
     updateUI(workout) {

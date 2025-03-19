@@ -27,20 +27,15 @@ class App {
 
     async initialize() {
         try {
-            // Initialize audio and speech
             await this.audioManager.initialize();
             await this.speechManager.initialize();
             this.visualizationManager.initialize();
-
-            // Load theme preference
             this.applyTheme();
-
-            // Set up event listeners
             this.setupEventListeners();
 
-            // Load workout history
+            // Set initial screen and tab state
+            this.uiController.showScreen('config');
             this.uiController.updateWorkoutHistory(this.storageManager.getWorkoutHistory());
-
         } catch (error) {
             console.error('Failed to initialize app:', error);
             this.handleInitializationError(error);
