@@ -108,6 +108,8 @@ class App {
                 exerciseTemplates: exerciseTemplates
             };
 
+            this.uiController.toggleWorkoutTab(true);
+
             // Set workout name
             const workoutName = document.getElementById('workoutName').value;
             settings.workoutName = workoutName ||
@@ -117,7 +119,7 @@ class App {
             this.storageManager.saveWorkout(this.workoutManager.getWorkout());
             this.uiController.showScreen('workout');
         } catch (error) {
-            console.error('Failed to generate workout:', error);
+            console.error('Error generating workout:', error);
             this.uiController.showError('Failed to generate workout. Please try again.');
         }
     }
@@ -151,11 +153,11 @@ class App {
 
     handleBackToConfig() {
         try {
-            this.workoutManager.reset();
-            this.uiController.showScreen('config');
+            // Hide the workout tab and return to config screen
+            this.uiController.toggleWorkoutTab(false);
         } catch (error) {
             console.error('Error returning to config:', error);
-            this.uiController.showError('Error returning to settings. Please refresh the page.');
+            this.uiController.showError('Failed to return to settings. Please try again.');
         }
     }
 
