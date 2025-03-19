@@ -1,185 +1,140 @@
-import { formatTime } from '../utils/TimeFormatter.js';
-
 class UIController {
     constructor() {
-        this.elements = {
+        this.screens = {
+            config: document.getElementById('configScreen'),
+            workout: document.getElementById('workoutScreen'),
+            history: document.getElementById('historyScreen')
+        };
+    }
+
+    showScreen(screenId) {
+        Object.values(this.screens).forEach(screen => {
+            if (screen) {
+                screen.classList.add('hidden');
+            }
+        });
+
+        const targetScreen = this.screens[screenId];
+        if (targetScreen) {
+            targetScreen.classList.remove('hidden');
+        }
+    }
+
+    updateUI(workout) {
+        if (!workout) return;
+
+        const elements = {
             workoutStatus: document.getElementById('workoutStatus'),
             currentExercise: document.getElementById('currentExercise'),
-            timerDisplay: document.getElementById('timerDisplay'),
-            currentRoundElement: document.getElementById('currentRound'),
-            totalRoundsElement: document.getElementById('totalRounds'),
-            roundTypeElement: document.getElementById('roundType'),
+            currentRound: document.getElementById('currentRound'),
+            totalRounds: document.getElementById('totalRounds'),
+            roundType: document.getElementById('roundType'),
             progressBar: document.getElementById('progressBar'),
-            startPauseBtn: document.getElementById('startPauseBtn'),
-            configScreen: document.getElementById('configScreen'),
-            historyScreen: document.getElementById('historyScreen'),
-            workoutScreen: document.getElementById('workoutScreen'),
-            workoutHistoryList: document.getElementById('workoutHistoryList'),
-            emptyHistoryMessage: document.getElementById('emptyHistoryMessage'),
-            volumeBtn: document.getElementById('volumeBtn'),
-            volumeControl: document.getElementById('volumeControl')
+            timerDisplay: document.getElementById('timerDisplay')
         };
 
-        this.initializeEventListeners();
-    }
-
-    initializeEventListeners() {
-        // Volume control listeners
-        this.elements.volumeBtn.addEventListener('click', () => this.handleVolumeButtonClick());
-        this.elements.volumeControl.addEventListener('input', () => this.updateVolumeIcon());
-    }
-
-    updateUI(workoutState) {
-        this.updateTimer(workoutState.timeRemaining);
-        
-        switch (workoutState.status) {
-            case 'ready':
-                this.updateReadyState(workoutState);
-                break;
-            case 'round':
-                this.updateRoundState(workoutState);
-                break;
-            case 'rest':
-                this.updateRestState(workoutState);
-                break;
-            case 'complete':
-                this.updateCompleteState(workoutState);
-                break;
-        }
-    }
-
-    updateTimer(timeRemaining) {
-        this.elements.timerDisplay.textContent = formatTime(timeRemaining);
-    }
-
-    updateReadyState(workoutState) {
-        this.elements.workoutStatus.textContent = 'Get Ready!';
-        this.elements.currentExercise.textContent = `Workout will begin in ${workoutState.timeRemaining} seconds`;
-        this.elements.currentRoundElement.textContent = '0';
-        this.elements.roundTypeElement.textContent = 'Warm Up';
-        this.elements.progressBar.style.width = '0%';
-        this.elements.timerDisplay.classList.remove('pulse-animation');
-    }
-
-    updateRoundState(workoutState) {
-        const currentRoundData = workoutState.rounds[workoutState.currentRound - 1];
-        const totalDuration = currentRoundData.duration;
-        const progress = ((totalDuration - workoutState.timeRemaining) / totalDuration) * 100;
-
-        this.elements.workoutStatus.textContent = `Round ${workoutState.currentRound}`;
-        this.elements.currentExercise.textContent = `${currentRoundData.name}: ${currentRoundData.combo}`;
-        this.elements.currentRoundElement.textContent = workoutState.currentRound;
-        this.elements.roundTypeElement.textContent = currentRoundData.name;
-        this.elements.progressBar.style.width = `${progress}%`;
-
-        // Add pulse animation when time is running low
-        if (workoutState.timeRemaining <= 10) {
-            this.elements.timerDisplay.classList.add('pulse-animation');
-        } else {
-            this.elements.timerDisplay.classList.remove('pulse-animation');
-        }
-    }
-
-    updateRestState(workoutState) {
-        const totalRest = workoutState.rounds[workoutState.currentRound - 1].rest;
-        const progress = ((totalRest - workoutState.timeRemaining) / totalRest) * 100;
-
-        this.elements.workoutStatus.textContent = 'Rest Period';
-        this.elements.currentExercise.textContent = 'Recover and breathe';
-        this.elements.progressBar.style.width = `${progress}%`;
-        this.elements.timerDisplay.classList.remove('pulse-animation');
-    }
-
-    updateCompleteState(workoutState) {
-        this.elements.workoutStatus.textContent = 'Workout Complete!';
-        this.elements.currentExercise.textContent = 'Great job!';
-        this.elements.progressBar.style.width = '100%';
-        this.elements.startPauseBtn.textContent = 'Restart';
-        this.elements.timerDisplay.classList.add('pulse-animation');
-    }
-
-    showScreen(screen) {
-        this.elements.configScreen.classList.add('hidden');
-        this.elements.historyScreen.classList.add('hidden');
-        this.elements.workoutScreen.classList.add('hidden');
-
-        this.elements[`${screen}Screen`].classList.remove('hidden');
-    }
-
-    updateWorkoutHistory(workoutHistory) {
-        if (workoutHistory.length === 0) {
-            this.elements.emptyHistoryMessage.classList.remove('hidden');
-            this.elements.workoutHistoryList.classList.add('hidden');
+        // Check if all elements exist
+        if (Object.values(elements).some(el => !el)) {
+            console.error('Some UI elements are missing');
             return;
         }
 
-        this.elements.emptyHistoryMessage.classList.add('hidden');
-        this.elements.workoutHistoryList.classList.remove('hidden');
-        this.elements.workoutHistoryList.innerHTML = '';
+        // Update UI elements
+        elements.currentRound.textContent = workout.currentRound;
+        elements.totalRounds.textContent = workout.rounds.length;
+        elements.timerDisplay.textContent = this.formatTime(workout.timeRemaining);
 
-        workoutHistory.forEach(workout => {
-            const card = this.createWorkoutHistoryCard(workout);
-            this.elements.workoutHistoryList.appendChild(card);
-        });
+        if (workout.status === 'ready') {
+            elements.workoutStatus.textContent = 'Get Ready!';
+            elements.currentExercise.textContent = 'Starting soon...';
+            elements.roundType.textContent = '-';
+        } else if (workout.status === 'complete') {
+            elements.workoutStatus.textContent = 'Workout Complete!';
+            elements.currentExercise.textContent = 'Great job!';
+            elements.roundType.textContent = '-';
+        } else {
+            const currentRound = workout.rounds[workout.currentRound - 1];
+            if (currentRound) {
+                elements.workoutStatus.textContent = workout.status === 'rest' ? 'Rest' : currentRound.name;
+                elements.currentExercise.textContent = workout.status === 'rest' ? 'Recover' : currentRound.combo;
+                elements.roundType.textContent = currentRound.type;
+            }
+        }
+
+        // Update progress bar
+        let progressPercent = 0;
+        if (workout.status !== 'ready' && workout.currentRound > 0) {
+            const currentRound = workout.rounds[workout.currentRound - 1];
+            const totalTime = workout.status === 'rest' ? currentRound.rest : currentRound.duration;
+            progressPercent = ((totalTime - workout.timeRemaining) / totalTime) * 100;
+        }
+        elements.progressBar.style.width = `${progressPercent}%`;
     }
 
-    createWorkoutHistoryCard(workout) {
-        const card = document.createElement('div');
-        card.className = 'workout-card bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow';
+    updateWorkoutHistory(history) {
+        const historyList = document.getElementById('workoutHistoryList');
+        const emptyMessage = document.getElementById('emptyHistoryMessage');
 
-        const totalTime = workout.rounds.reduce((total, round) =>
-            total + round.duration + (round.rest || 0), 0);
+        if (!historyList || !emptyMessage) return;
 
-        card.innerHTML = `
-            <div class="flex justify-between items-start mb-2">
-                <h3 class="font-medium">${workout.name}</h3>
-                <span class="text-xs text-gray-500 dark:text-gray-400">${workout.date}</span>
+        if (!history || history.length === 0) {
+            historyList.innerHTML = '';
+            emptyMessage.classList.remove('hidden');
+            return;
+        }
+
+        emptyMessage.classList.add('hidden');
+        historyList.innerHTML = history.map(workout => this.createWorkoutCard(workout)).join('');
+    }
+
+    createWorkoutCard(workout) {
+        return `
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-medium">${workout.name}</h3>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">${workout.date}</span>
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-300">
+                    ${workout.rounds.length} rounds • ${workout.roundDuration}s work / ${workout.restDuration}s rest
+                </div>
             </div>
-            <div class="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                <div><span class="font-medium">${workout.rounds.length}</span> rounds · <span class="font-medium">${formatTime(totalTime)}</span> total</div>
-                <div class="mt-1">${this.formatRoundDetails(workout)}</div>
-            </div>
-            <button class="load-workout-btn w-full bg-primary/10 hover:bg-primary/20 text-primary dark:text-primary-light text-sm font-medium py-1.5 px-3 rounded transition-colors" data-id="${workout.id}">
-                Load Workout
-            </button>
         `;
-
-        return card;
     }
 
-    formatRoundDetails(workout) {
-        const exercises = [...new Set(workout.rounds.map(r => r.name))];
-        return exercises.length > 3 
-            ? `${exercises.length} different exercises`
-            : exercises.join(' · ');
-    }
-
-    handleVolumeButtonClick() {
-        const volumeControl = this.elements.volumeControl;
-        if (parseInt(volumeControl.value) > 0) {
-            volumeControl.dataset.previousValue = volumeControl.value;
-            volumeControl.value = 0;
-        } else {
-            volumeControl.value = volumeControl.dataset.previousValue || 70;
+    updateStartPauseButton(text) {
+        const button = document.getElementById('startPauseBtn');
+        if (button) {
+            button.textContent = text;
         }
-
-        volumeControl.dispatchEvent(new Event('input'));
-        this.updateVolumeIcon();
     }
 
-    updateVolumeIcon() {
-        const volume = parseInt(this.elements.volumeControl.value);
-        let iconPath = '';
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
 
-        if (volume === 0) {
-            iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>`;
-        } else if (volume < 50) {
-            iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM15.536 8.464a5 5 0 010 7.072"/>`;
-        } else {
-            iconPath = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728"/>`;
-        }
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        document.body.prepend(errorDiv);
 
-        this.elements.volumeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconPath}</svg>`;
+        // Remove the error message after 5 seconds
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+    }
+
+    updateIntensityDisplay() {
+        const intensityLevel = document.getElementById('intensityLevel');
+        const intensityDisplay = document.getElementById('intensityDisplay');
+
+        if (!intensityLevel || !intensityDisplay) return;
+
+        const value = intensityLevel.value;
+        const labels = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
+        intensityDisplay.textContent = labels[value - 1];
     }
 }
 
