@@ -113,15 +113,14 @@ class App {
             settings.workoutName = workoutName ||
                 `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
 
-            const workout = this.workoutGenerator.generateWorkout(settings);
+            // Use workoutManager instead of workoutGenerator
+            const workout = this.workoutManager.generateWorkout(settings);
             if (workout) {
                 this.currentWorkout = workout;
-                this.uiController.toggleWorkoutTab(true); // Show workout tab
+                this.uiController.toggleWorkoutTab(true);
                 this.uiController.updateUI(workout);
+                this.storageManager.saveWorkout(workout);
             }
-
-            this.storageManager.saveWorkout(this.workoutManager.getWorkout());
-            this.uiController.showScreen('workout');
         } catch (error) {
             console.error('Error generating workout:', error);
             this.uiController.showError('Failed to generate workout. Please try again.');
@@ -156,8 +155,14 @@ class App {
     }
 
     handleBackToConfig() {
-        this.uiController.toggleWorkoutTab(false); // Hide workout tab
-        this.currentWorkout = null;
+        try {
+            this.workoutManager.reset();  // Make sure to reset the workout
+            this.uiController.toggleWorkoutTab(false);
+            this.currentWorkout = null;
+        } catch (error) {
+            console.error('Error returning to config:', error);
+            this.uiController.showError('Error returning to settings. Please try again.');
+        }
     }
 
     handleThemeToggle() {

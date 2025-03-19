@@ -6,10 +6,9 @@ class UIController {
             history: document.getElementById('historyScreen')
         };
 
-        // Tab configuration with workout tab
+        // Tab configuration - workout tab handled separately
         this.tabs = new Map([
             ['config', { id: 'configTab', label: 'Create Workout' }],
-            ['workout', { id: 'workoutTab', label: 'Current Workout' }],
             ['history', { id: 'historyTab', label: 'Workout History' }]
         ]);
 
@@ -21,7 +20,7 @@ class UIController {
         };
 
         this.isMuted = false;
-        this.previousVolume = 70; // Default volume level
+        this.previousVolume = 70;
 
         this.initializeTabs();
     }
@@ -56,10 +55,12 @@ class UIController {
     }
 
     updateTabStates(activeTabId) {
-        // Update regular tabs
-        this.tabs.forEach((tabConfig, tabId) => {
+        // Update all tabs with consistent styling
+        const allTabs = [...this.tabs.entries(), ['workout', { id: 'workoutTab' }]];
+
+        allTabs.forEach(([tabId, tabConfig]) => {
             const tabElement = document.getElementById(tabConfig.id);
-            if (tabElement) {
+            if (tabElement && (!tabElement.classList.contains('hidden') || tabId === 'workout')) {
                 const isActive = tabId === activeTabId;
                 const classes = [
                     this.tabClasses.base,
@@ -69,18 +70,6 @@ class UIController {
                 tabElement.setAttribute('aria-selected', isActive.toString());
             }
         });
-
-        // Handle workout tab separately
-        const workoutTab = document.getElementById('workoutTab');
-        if (workoutTab && !workoutTab.classList.contains('hidden')) {
-            const isActive = activeTabId === 'workout';
-            const classes = [
-                this.tabClasses.base,
-                isActive ? this.tabClasses.active : this.tabClasses.inactive
-            ];
-            workoutTab.className = classes.join(' ');
-            workoutTab.setAttribute('aria-selected', isActive.toString());
-        }
     }
 
     toggleWorkoutTab(show) {
