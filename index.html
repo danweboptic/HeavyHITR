@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <title>HeavyHITR</title>
+
+    <!-- Tailwind Configuration -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -57,10 +59,10 @@
         <!-- Main content area with tabs -->
         <div class="mb-8">
             <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                <button id="configTab" class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 active-tab">
+                <button id="configTab" class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                     Create Workout
                 </button>
-                <button id="historyTab" class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                <button id="historyTab" class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                     Workout History
                 </button>
             </div>
@@ -182,7 +184,7 @@
                     <button id="startPauseBtn" class="gradient-btn text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
                         Start
                     </button>
-                    <button id="resetBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors">
+                    <button id="resetBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-colors">
                         Reset
                     </button>
                 </div>
@@ -204,80 +206,19 @@
         </div>
     </div>
 
-    <script src="script.js" type="text/javascript" charset="utf-8"></script>
+    <!-- Service Worker Registration -->
+    <script type="module" src="js/app.js"></script>
     <script>
-        // Theme toggle functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const themeToggle = document.getElementById('themeToggle');
-
-            themeToggle.addEventListener('click', function() {
-                document.documentElement.classList.toggle('dark');
-                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            });
-
-            // Check for saved theme preference or use system preference
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                if (savedTheme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark');
-            }
-
-            // Update intensity fill based on slider
-            const intensitySlider = document.getElementById('intensityLevel');
-            const intensityFill = document.getElementById('intensityFill');
-
-            function updateIntensity() {
-                const value = intensitySlider.value;
-                const percentage = ((value - 1) / 4) * 100;
-                intensityFill.style.width = `${percentage}%`;
-
-                const intensityTexts = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
-                document.getElementById('intensityDisplay').textContent = intensityTexts[value-1];
-            }
-
-            intensitySlider.addEventListener('input', updateIntensity);
-            updateIntensity(); // Initialize
-
-            // Tab functionality (simplified version)
-            const configTab = document.getElementById('configTab');
-            const historyTab = document.getElementById('historyTab');
-            const configScreen = document.getElementById('configScreen');
-            const historyScreen = document.getElementById('historyScreen');
-
-            configTab.addEventListener('click', function() {
-                configScreen.classList.remove('hidden');
-                historyScreen.classList.add('hidden');
-                configTab.classList.add('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
-                historyTab.classList.remove('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
-            });
-
-            historyTab.addEventListener('click', function() {
-                configScreen.classList.add('hidden');
-                historyScreen.classList.remove('hidden');
-                historyTab.classList.add('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
-                configTab.classList.remove('active-tab', 'border-b-2', 'border-primary', 'dark:border-primary-light', 'text-primary', 'dark:text-primary-light');
-            });
-
-            // Initialize tabs
-            configTab.click();
-        });
-
-        // Add this script at the bottom of your index.html
         if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-              .then(registration => {
-                console.log('Service Worker registered: ', registration);
-              })
-              .catch(error => {
-                console.log('Service Worker registration failed: ', error);
-              });
-          });
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered: ', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed: ', error);
+                    });
+            });
         }
     </script>
 </body>
