@@ -33,8 +33,7 @@ class App {
             this.applyTheme();
             this.setupEventListeners();
 
-            // Set initial screen and tab state
-            this.uiController.showScreen('config');
+            // No need to explicitly call showScreen here as it's handled in UIController constructor
             this.uiController.updateWorkoutHistory(this.storageManager.getWorkoutHistory());
         } catch (error) {
             console.error('Failed to initialize app:', error);
