@@ -1,4 +1,5 @@
-import { CONFIG, motivationalPhrases } from '../config.js';
+import { CONFIG } from '../config.js';
+import motivationalPhrases from '../data/MotivationalPhrases.js';
 import { formatTime } from '../utils/TimeFormatter.js';
 
 class WorkoutManager {

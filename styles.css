@@ -169,3 +169,26 @@
     background: #1E1E1E;
     border-color: #8A2BE2;
 }
+
+/* Add this to your existing CSS */
+.error-message {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    max-width: 90%;
+    text-align: center;
+}
+
+.dark .error-message {
+    background-color: #7f1d1d;
+    border-color: #dc2626;
+    color: #fecaca;
+}
