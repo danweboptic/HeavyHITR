@@ -82,3 +82,88 @@
 .gradient-progress {
     background-image: linear-gradient(90deg, #5D5CDE, #8A2BE2, #F72585);
 }
+
+/* Gradient Range Slider Styles */
+.gradient-range {
+    --range-progress: 50%;
+
+    /* Reset default styles */
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+
+/* Slider Track */
+.gradient-range::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(to right, #5D5CDE, #8A2BE2, #F72585);
+    border-radius: 4px;
+}
+
+.gradient-range::-moz-range-track {
+    height: 8px;
+    background: linear-gradient(to right, #5D5CDE, #8A2BE2, #F72585);
+    border-radius: 4px;
+}
+
+/* Slider Thumb */
+.gradient-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #5D5CDE;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px; /* Center thumb on track */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.gradient-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #5D5CDE;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Hover and Focus States */
+.gradient-range:hover::-webkit-slider-thumb,
+.gradient-range:focus::-webkit-slider-thumb {
+    background: #5D5CDE;
+    border-color: #fff;
+}
+
+.gradient-range:hover::-moz-range-thumb,
+.gradient-range:focus::-moz-range-thumb {
+    background: #5D5CDE;
+    border-color: #fff;
+}
+
+/* Dark Mode Adjustments */
+.dark .gradient-range::-webkit-slider-thumb {
+    background: #1E1E1E;
+    border-color: #8A2BE2;
+}
+
+.dark .gradient-range::-moz-range-thumb {
+    background: #1E1E1E;
+    border-color: #8A2BE2;
+}
+
+.dark .gradient-range:hover::-webkit-slider-thumb,
+.dark .gradient-range:focus::-webkit-slider-thumb {
+    background: #8A2BE2;
+    border-color: #1E1E1E;
+}
+
+.dark .gradient-range:hover::-moz-range-thumb,
+.dark .gradient-range:focus::-moz-range-thumb {
+    background: #8A2BE2;
+    border-color: #1E1E1E;
+}
