@@ -19,6 +19,9 @@ class UIController {
             inactive: 'border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
             active: 'border-primary dark:border-primary-light text-gray-900 dark:text-white'
         };
+
+        this.isMuted = false;
+        this.previousVolume = 70; // Default volume level
     }
 
     showScreen(screenId) {
@@ -168,6 +171,28 @@ class UIController {
         const value = intensityLevel.value;
         const labels = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
         intensityDisplay.textContent = labels[value - 1];
+    }
+
+    handleVolumeButtonClick() {
+        const volumeControl = document.getElementById('volumeControl');
+        if (!volumeControl) return;
+
+        if (this.isMuted) {
+            // Unmute: restore previous volume
+            volumeControl.value = this.previousVolume;
+            this.isMuted = false;
+        } else {
+            // Mute: store current volume and set to 0
+            this.previousVolume = volumeControl.value;
+            volumeControl.value = 0;
+            this.isMuted = true;
+        }
+
+        // Update the volume icon
+        this.updateVolumeIcon(volumeControl.value);
+
+        // Return the current volume value so the audio manager can use it
+        return parseInt(volumeControl.value);
     }
 
     updateVolumeIcon(volume) {
