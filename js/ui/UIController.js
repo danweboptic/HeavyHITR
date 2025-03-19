@@ -27,6 +27,12 @@ class UIController {
     }
 
     initializeTabs() {
+        // Hide workout tab initially
+        const workoutTab = document.getElementById('workoutTab');
+        if (workoutTab) {
+            workoutTab.classList.add('hidden');
+        }
+
         // Set first tab (config) as active by default
         this.showScreen('config');
     }
@@ -50,6 +56,7 @@ class UIController {
     }
 
     updateTabStates(activeTabId) {
+        // Update regular tabs
         this.tabs.forEach((tabConfig, tabId) => {
             const tabElement = document.getElementById(tabConfig.id);
             if (tabElement) {
@@ -59,14 +66,23 @@ class UIController {
                     isActive ? this.tabClasses.active : this.tabClasses.inactive
                 ];
                 tabElement.className = classes.join(' ');
-
-                // Update ARIA attributes
                 tabElement.setAttribute('aria-selected', isActive.toString());
             }
         });
+
+        // Handle workout tab separately
+        const workoutTab = document.getElementById('workoutTab');
+        if (workoutTab && !workoutTab.classList.contains('hidden')) {
+            const isActive = activeTabId === 'workout';
+            const classes = [
+                this.tabClasses.base,
+                isActive ? this.tabClasses.active : this.tabClasses.inactive
+            ];
+            workoutTab.className = classes.join(' ');
+            workoutTab.setAttribute('aria-selected', isActive.toString());
+        }
     }
 
-    // Method to show/hide workout tab
     toggleWorkoutTab(show) {
         const workoutTab = document.getElementById('workoutTab');
         if (workoutTab) {

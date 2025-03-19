@@ -108,7 +108,12 @@ class App {
                 exerciseTemplates: exerciseTemplates
             };
 
-            this.uiController.toggleWorkoutTab(true);
+            const workout = this.workoutGenerator.generateWorkout();
+            if (workout) {
+                this.currentWorkout = workout;
+                this.uiController.toggleWorkoutTab(true); // Show workout tab
+                this.uiController.updateUI(workout);
+            }
 
             // Set workout name
             const workoutName = document.getElementById('workoutName').value;
@@ -152,13 +157,8 @@ class App {
     }
 
     handleBackToConfig() {
-        try {
-            // Hide the workout tab and return to config screen
-            this.uiController.toggleWorkoutTab(false);
-        } catch (error) {
-            console.error('Error returning to config:', error);
-            this.uiController.showError('Failed to return to settings. Please try again.');
-        }
+        this.uiController.toggleWorkoutTab(false); // Hide workout tab
+        this.currentWorkout = null;
     }
 
     handleThemeToggle() {
