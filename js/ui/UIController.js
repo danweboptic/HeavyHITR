@@ -22,6 +22,13 @@ class UIController {
 
         this.isMuted = false;
         this.previousVolume = 70; // Default volume level
+
+        this.initializeTabs();
+    }
+
+    initializeTabs() {
+        // Set first tab (config) as active by default
+        this.showScreen('config');
     }
 
     showScreen(screenId) {
@@ -52,6 +59,9 @@ class UIController {
                     isActive ? this.tabClasses.active : this.tabClasses.inactive
                 ];
                 tabElement.className = classes.join(' ');
+
+                // Update ARIA attributes
+                tabElement.setAttribute('aria-selected', isActive.toString());
             }
         });
     }
