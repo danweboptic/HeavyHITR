@@ -6,7 +6,7 @@ class UIController {
             history: document.getElementById('historyScreen')
         };
 
-        // Tab configuration
+        // Tab configuration with workout tab
         this.tabs = new Map([
             ['config', { id: 'configTab', label: 'Create Workout' }],
             ['workout', { id: 'workoutTab', label: 'Current Workout' }],
@@ -64,6 +64,20 @@ class UIController {
                 tabElement.setAttribute('aria-selected', isActive.toString());
             }
         });
+    }
+
+    // Method to show/hide workout tab
+    toggleWorkoutTab(show) {
+        const workoutTab = document.getElementById('workoutTab');
+        if (workoutTab) {
+            if (show) {
+                workoutTab.classList.remove('hidden');
+                this.showScreen('workout');
+            } else {
+                workoutTab.classList.add('hidden');
+                this.showScreen('config');
+            }
+        }
     }
 
     updateUI(workout) {
