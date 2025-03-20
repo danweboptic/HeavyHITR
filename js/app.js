@@ -5,25 +5,33 @@ import WorkoutManager from './workout/WorkoutManager.js';
 import UIController from './ui/UIController.js';
 import StorageManager from './storage/StorageManager.js';
 import VisualizationManager from './visualization/VisualizationManager.js';
-import exerciseTemplates from './data/ExerciseTemplates.js';
+import exerciseTemplates from './data/ExerciseTemplates.js';  // Make sure this is correct path
 
 class App {
     constructor() {
-        this.storageManager = new StorageManager();
-        this.uiController = new UIController();
-        this.audioManager = new AudioManager();
-        this.speechManager = new SpeechManager();
-        this.visualizationManager = new VisualizationManager(
-            document.getElementById('beatVisualization')
-        );
-        this.workoutManager = new WorkoutManager(
-            this.audioManager,
-            this.speechManager,
-            this.uiController
-        );
+        console.log('App constructor started');
+        try {
+            this.storageManager = new StorageManager();
+            this.uiController = new UIController();
+            this.audioManager = new AudioManager();
+            this.speechManager = new SpeechManager();
+            this.visualizationManager = new VisualizationManager(
+                document.getElementById('beatVisualization')
+            );
+            this.workoutManager = new WorkoutManager(
+                this.audioManager,
+                this.speechManager,
+                this.uiController
+            );
+            console.log('App constructor: all managers initialized');
+        } catch (error) {
+            console.error('Error in App constructor:', error);
+            throw error;
+        }
     }
 
     async initialize() {
+        console.log('App initialize started');
         try {
             await this.audioManager.initialize();
             await this.speechManager.initialize();
@@ -31,6 +39,7 @@ class App {
             this.applyTheme();
             await this.setupEventListeners(); // Made async
             this.uiController.updateWorkoutHistory(this.storageManager.getWorkoutHistory());
+            console.log('App initialization completed');
         } catch (error) {
             console.error('Failed to initialize app:', error);
             this.handleInitializationError(error);
@@ -42,7 +51,15 @@ class App {
             // Workout generation and control
             const generateWorkoutBtn = document.getElementById('generateWorkoutBtn');
             if (generateWorkoutBtn) {
-                generateWorkoutBtn.addEventListener('click', () => this.handleGenerateWorkout());
+                console.log('Setting up generate workout button handler');
+                // Explicitly bind the method and add debugging
+                const boundHandler = this.handleGenerateWorkout.bind(this);
+                generateWorkoutBtn.addEventListener('click', () => {
+                    console.log('Generate button clicked, calling handler');
+                    boundHandler();
+                });
+            } else {
+                console.error('Generate workout button not found');
             }
 
             const startPauseBtn = document.getElementById('startPauseBtn');
@@ -132,11 +149,10 @@ class App {
     }
 
     handleGenerateWorkout() {
-        console.log('=== Starting workout generation ===');
-        try {
-            // Log initial state
-            console.log('1. Getting form elements...');
+        console.log('handleGenerateWorkout called');
+        console.log('Exercise Templates:', exerciseTemplates); // Debug log
 
+        try {
             // Get and validate form elements
             const numRoundsInput = document.getElementById('numRounds');
             const roundDurationInput = document.getElementById('roundDuration');
@@ -145,7 +161,7 @@ class App {
             const workoutTypeInput = document.getElementById('workoutType');
             const workoutNameInput = document.getElementById('workoutName');
 
-            // Log form values
+            // Log form values for debugging
             console.log('Form values:', {
                 numRounds: numRoundsInput?.value,
                 roundDuration: roundDurationInput?.value,
@@ -161,7 +177,6 @@ class App {
                 throw new Error('Required form elements are missing');
             }
 
-            console.log('2. Creating settings object...');
             // Validate and parse inputs
             const settings = {
                 numRounds: parseInt(numRoundsInput.value),
@@ -169,10 +184,10 @@ class App {
                 restDuration: parseInt(restDurationInput.value),
                 intensity: parseInt(intensityLevelInput.value),
                 workoutType: workoutTypeInput.value,
-                exerciseTemplates: exerciseTemplates
+                exerciseTemplates: exerciseTemplates  // Pass the imported templates directly
             };
 
-            console.log('Settings object:', settings);
+            console.log('Settings before validation:', settings); // Debug log
 
             // Validate numeric values
             if (isNaN(settings.numRounds) || isNaN(settings.roundDuration) ||
@@ -180,14 +195,18 @@ class App {
                 throw new Error('Invalid numeric values in form');
             }
 
-            console.log('3. Setting workout name...');
+            // Validate workout type
+            if (!exerciseTemplates[settings.workoutType]) {
+                console.error('Available workout types:', Object.keys(exerciseTemplates));
+                throw new Error(`Invalid workout type: ${settings.workoutType}`);
+            }
+
             // Set workout name
             settings.workoutName = workoutNameInput?.value ||
                 `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
 
-            console.log('Final workout name:', settings.workoutName);
+            console.log('Final settings:', settings); // Debug log
 
-            console.log('4. Generating workout...');
             // Generate workout
             const workout = this.workoutManager.generateWorkout(settings);
             console.log('Generated workout:', workout);
@@ -196,19 +215,16 @@ class App {
                 throw new Error('Failed to generate workout');
             }
 
-            console.log('5. Updating UI...');
             // Update UI first
             this.uiController.updateUI(workout);
 
-            console.log('6. Showing workout tab...');
             // Then show the workout tab
             this.uiController.showWorkoutTab();
 
-            console.log('7. Saving workout...');
             // Save the workout last
             this.storageManager.saveWorkout(workout);
 
-            console.log('=== Workout generation completed successfully ===');
+            console.log('Workout generation completed successfully');
 
         } catch (error) {
             console.error('Error generating workout:', error);
@@ -301,11 +317,14 @@ class App {
 }
 
 // Initialize the application when the DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded - starting app initialization');
     try {
         window.app = new App();
+        await window.app.initialize();
+        console.log('App fully initialized');
     } catch (error) {
-        console.error('Failed to create App instance:', error);
+        console.error('Failed to initialize app:', error);
         const errorMessage = document.createElement('div');
         errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50';
         errorMessage.textContent = `Failed to initialize: ${error.message}`;
