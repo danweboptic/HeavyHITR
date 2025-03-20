@@ -169,16 +169,19 @@ class App {
 
             // Generate workout
             const workout = this.workoutManager.generateWorkout(settings);
-
             if (!workout) {
                 throw new Error('Failed to generate workout');
             }
 
-            // Show workout tab and save
+            // Update UI first
+            this.uiController.updateUI(workout);
+
+            // Then show the workout tab
             this.uiController.showWorkoutTab();
+
+            // Save the workout last
             this.storageManager.saveWorkout(workout);
 
-            // Log success
             console.log('Workout generated successfully:', workout);
 
         } catch (error) {
@@ -186,7 +189,6 @@ class App {
             this.uiController.showError(`Failed to generate workout: ${error.message}`);
         }
     }
-
 
     handleStartPause() {
         try {

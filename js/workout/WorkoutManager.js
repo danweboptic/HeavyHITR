@@ -20,7 +20,7 @@ class WorkoutManager {
 
     generateWorkout(settings) {
         const { numRounds, roundDuration, restDuration, intensity, workoutType, workoutName, exerciseTemplates } = settings;
-        
+
         this.workout.name = workoutName;
         this.workout.rounds = [];
 
@@ -31,7 +31,7 @@ class WorkoutManager {
         }
 
         this.initializeWorkout();
-        return this.workout;  // Add this line to return the workout object
+        return this.workout;  // Return the workout object
     }
 
     generateRegularWorkout(numRounds, roundDuration, restDuration, intensity, workoutType, exerciseTemplates) {

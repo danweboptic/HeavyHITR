@@ -104,7 +104,12 @@ class UIController {
         const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
         if (workoutTab) {
             workoutTab.classList.remove('hidden');
-            this.switchTab('workout');
+            // Force a small delay to ensure the class removal is processed
+            setTimeout(() => {
+                this.switchTab('workout');
+            }, 0);
+        } else {
+            console.error('Workout tab element not found');
         }
     }
 
