@@ -94,6 +94,7 @@ class WorkoutManager {
     }
 
     start() {
+        await this.audioManager.ensureAudioContext();
         this.workout.isRunning = true;
 
         if (this.workout.status === 'ready') {

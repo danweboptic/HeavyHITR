@@ -15,9 +15,11 @@ class AudioManager {
         this.crossfadeInProgress = false;
         this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         this.audioInitialized = false;
+        this.silentModeDetector = new SilentModeDetector();
     }
 
     async initialize() {
+        await this.silentModeDetector.checkSilentMode();
         try {
             // Defer creation of AudioContext on iOS until user interaction
             if (!this.isIOS) {
@@ -101,6 +103,8 @@ class AudioManager {
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
+
+        await this.silentModeDetector.checkSilentMode();
     }
 
     setVolume(volume) {
