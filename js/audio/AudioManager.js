@@ -1,3 +1,4 @@
+import { audioTracks, audioConfig } from '../data/audioTracks.js';
 import { CONFIG } from '../config.js';
 
 class AudioManager {
@@ -5,21 +6,22 @@ class AudioManager {
         this.audioContext = null;
         this.gainNode = null;
         this.analyser = null;
-        this.beatSource = null;
+        this.currentTrack = null;
+        this.currentSource = null;
         this.visualizationTimer = null;
-        this.currentVolume = 70; // Default volume
+        this.currentVolume = audioConfig.volumeRange.default;
+        this.tracks = audioTracks;
+        this.audioBuffers = new Map();
+        this.crossfadeInProgress = false;
     }
 
     async initialize() {
-        if (this.audioContext) return true; // Already initialized
-
         try {
-            console.log('Initializing audio manager');
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = 256;
 
-            // Create gain node
+            // Create gain node for volume control
             this.gainNode = this.audioContext.createGain();
             this.gainNode.connect(this.analyser);
             this.analyser.connect(this.audioContext.destination);
@@ -27,7 +29,9 @@ class AudioManager {
             // Set initial volume
             this.setVolume(this.currentVolume);
 
-            console.log('Audio manager initialized successfully');
+            // Preload audio files
+            await this.preloadTracks();
+
             return true;
         } catch (error) {
             console.error("Audio initialization error:", error);
@@ -35,172 +39,201 @@ class AudioManager {
         }
     }
 
-    async ensureAudioContext() {
-        if (!this.audioContext) {
-            await this.initialize();
-        } else if (this.audioContext.state === 'suspended') {
-            try {
-                await this.audioContext.resume();
-            } catch (error) {
-                console.error('Error resuming audio context:', error);
+    async preloadTracks() {
+        const loadPromises = [];
+
+        Object.values(this.tracks).forEach(intensityTracks => {
+            intensityTracks.forEach(track => {
+                if (!this.audioBuffers.has(track.url)) {
+                    loadPromises.push(this.loadTrack(track.url));
+                }
+            });
+        });
+
+        try {
+            await Promise.all(loadPromises);
+            console.log('All audio tracks preloaded successfully');
+        } catch (error) {
+            console.error('Error preloading tracks:', error);
+        }
+    }
+
+    async loadTrack(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            this.audioBuffers.set(url, audioBuffer);
+            console.log(`Loaded track: ${url}`);
+        } catch (error) {
+            console.error(`Error loading track ${url}:`, error);
+            throw error; // Propagate error for proper handling
+        }
+    }
+
+    async ensureAudioContext() {
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
         }
     }
 
     setVolume(volume) {
-        if (!this.gainNode) return;
+        // Ensure volume is within valid range
+        volume = Math.max(audioConfig.volumeRange.min,
+                         Math.min(audioConfig.volumeRange.max, parseInt(volume) || 0));
+        this.currentVolume = volume;
 
-        try {
-            // Ensure volume is a number between 0 and 100
-            volume = Math.max(0, Math.min(100, parseInt(volume) || 0));
-            this.currentVolume = volume;
+        // Convert to gain value (0 to 1)
+        const gainValue = volume / 100;
+        const now = this.audioContext.currentTime;
 
-            // Convert to gain value (0 to 1)
-            const gainValue = volume / 100;
-
-            // Set the gain value with a small ramp to avoid clicks
-            const now = this.audioContext?.currentTime || 0;
-            this.gainNode.gain.cancelScheduledValues(now);
-            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-            this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.01);
-        } catch (error) {
-            console.error('Error setting volume:', error);
-        }
+        // Apply volume change with small ramp to avoid clicks
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+        this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.05);
     }
 
-    async startBeat(intensity) {
+    getIntensityTracks(intensity) {
+        if (intensity <= 2) return this.tracks.low;
+        if (intensity <= 4) return this.tracks.medium;
+        return this.tracks.high;
+    }
+
+    async startBeat(intensity = 3) {
+        if (!this.audioContext) return;
+
         try {
             await this.ensureAudioContext();
-            this.stopBeat();
-            this.createDrumPatterns(intensity);
+
+            // If there's a current track, crossfade to the new one
+            const shouldCrossfade = this.currentSource !== null;
+            if (shouldCrossfade) {
+                await this.crossfadeToNewTrack(intensity);
+            } else {
+                await this.startNewTrack(intensity);
+            }
+
         } catch (error) {
             console.error("Error starting beat:", error);
         }
     }
 
-    stopBeat() {
-        if (this.beatSource) {
-            this.beatSource.stop();
-            this.beatSource = null;
-        }
-    }
+    async startNewTrack(intensity) {
+        const intensityTracks = this.getIntensityTracks(intensity);
+        const track = intensityTracks[Math.floor(Math.random() * intensityTracks.length)];
 
-    createDrumPatterns(intensity) {
+        // Create and configure source
+        const source = this.audioContext.createBufferSource();
+        source.buffer = this.audioBuffers.get(track.url);
+        source.loop = true;
+
+        // Apply playback rate based on intensity
+        const speedMultiplier = 1 + ((intensity - 3) * audioConfig.intensitySpeedChange);
+        source.playbackRate.value = speedMultiplier;
+
+        // Fade in
         const now = this.audioContext.currentTime;
-        const bpm = CONFIG.BPM_BASE + (intensity * CONFIG.BPM_INCREMENT);
-        const beatDuration = 60 / bpm;
-        
-        // Schedule patterns for 60 seconds
-        const totalBeats = Math.ceil(60 / beatDuration);
-        
-        for (let i = 0; i < totalBeats; i++) {
-            // Kick drum (four-on-the-floor)
-            this.scheduleKickDrum(now + (i * beatDuration));
-            
-            // Snare on beats 2 and 4
-            if (i % 2 === 1) {
-                this.scheduleSnare(now + (i * beatDuration));
+        this.gainNode.gain.setValueAtTime(0, now);
+        this.gainNode.gain.linearRampToValueAtTime(
+            this.currentVolume / 100,
+            now + audioConfig.fadeInDuration
+        );
+
+        source.connect(this.gainNode);
+        source.start(0);
+
+        this.currentSource = source;
+        this.currentTrack = track;
+    }
+
+    async crossfadeToNewTrack(intensity) {
+        if (this.crossfadeInProgress) return;
+        this.crossfadeInProgress = true;
+
+        const intensityTracks = this.getIntensityTracks(intensity);
+        const newTrack = intensityTracks[Math.floor(Math.random() * intensityTracks.length)];
+
+        // Create new gain node for the new track
+        const newGainNode = this.audioContext.createGain();
+        newGainNode.connect(this.analyser);
+
+        // Create and configure new source
+        const newSource = this.audioContext.createBufferSource();
+        newSource.buffer = this.audioBuffers.get(newTrack.url);
+        newSource.loop = true;
+
+        // Apply playback rate based on intensity
+        const speedMultiplier = 1 + ((intensity - 3) * audioConfig.intensitySpeedChange);
+        newSource.playbackRate.value = speedMultiplier;
+
+        // Connect new source to its gain node
+        newSource.connect(newGainNode);
+
+        // Set up crossfade
+        const now = this.audioContext.currentTime;
+        const fadeTime = audioConfig.fadeOutDuration;
+
+        // Fade out current track
+        this.gainNode.gain.linearRampToValueAtTime(0, now + fadeTime);
+
+        // Fade in new track
+        newGainNode.gain.setValueAtTime(0, now);
+        newGainNode.gain.linearRampToValueAtTime(this.currentVolume / 100, now + fadeTime);
+
+        // Start new track
+        newSource.start(0);
+
+        // Clean up after crossfade
+        setTimeout(() => {
+            if (this.currentSource) {
+                this.currentSource.stop();
             }
-            
-            // Hi-hat pattern
-            const hiHatDivision = intensity <= 2 ? 2 : (intensity <= 4 ? 4 : 8);
-            for (let j = 0; j < hiHatDivision; j++) {
-                this.scheduleHiHat(now + (i * beatDuration) + (j * beatDuration / hiHatDivision));
-            }
-            
-            // Bass notes on beats 1 and 3
-            if (i % 2 === 0) {
-                this.scheduleBassNote(now + (i * beatDuration), 50 + intensity * 5);
-            }
+            this.currentSource = newSource;
+            this.currentTrack = newTrack;
+            this.gainNode = newGainNode;
+            this.crossfadeInProgress = false;
+        }, fadeTime * 1000);
+    }
+
+    stopBeat() {
+        if (this.currentSource) {
+            const now = this.audioContext.currentTime;
+
+            // Fade out
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+            this.gainNode.gain.linearRampToValueAtTime(0, now + audioConfig.fadeOutDuration);
+
+            // Stop the source after fade out
+            setTimeout(() => {
+                if (this.currentSource) {
+                    this.currentSource.stop();
+                    this.currentSource = null;
+                    this.currentTrack = null;
+                }
+                this.crossfadeInProgress = false;
+            }, audioConfig.fadeOutDuration * 1000);
         }
-    }
-
-    // Individual instrument scheduling methods
-    scheduleKickDrum(time) {
-        const kickOsc = this.audioContext.createOscillator();
-        const kickGain = this.audioContext.createGain();
-        
-        kickOsc.frequency.value = 150;
-        kickGain.gain.setValueAtTime(0.8, time);
-        kickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-        kickOsc.frequency.setValueAtTime(150, time);
-        kickOsc.frequency.exponentialRampToValueAtTime(50, time + 0.15);
-        
-        kickOsc.connect(kickGain);
-        kickGain.connect(this.gainNode);
-        
-        kickOsc.start(time);
-        kickOsc.stop(time + 0.15);
-    }
-
-    scheduleSnare(time) {
-        const bufferSize = this.audioContext.sampleRate * 0.1;
-        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
-        
-        const noise = this.audioContext.createBufferSource();
-        noise.buffer = buffer;
-        
-        const snareFilter = this.audioContext.createBiquadFilter();
-        snareFilter.type = 'bandpass';
-        snareFilter.frequency.value = 2000;
-        snareFilter.Q.value = 1;
-        
-        const snareGain = this.audioContext.createGain();
-        snareGain.gain.setValueAtTime(0.6, time);
-        snareGain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
-        
-        noise.connect(snareFilter);
-        snareFilter.connect(snareGain);
-        snareGain.connect(this.gainNode);
-        
-        noise.start(time);
-        noise.stop(time + 0.2);
-    }
-
-    scheduleHiHat(time) {
-        const hihatOsc = this.audioContext.createOscillator();
-        hihatOsc.type = 'square';
-        hihatOsc.frequency.value = 6000;
-        
-        const hihatFilter = this.audioContext.createBiquadFilter();
-        hihatFilter.type = 'highpass';
-        hihatFilter.frequency.value = 7000;
-        
-        const hihatGain = this.audioContext.createGain();
-        hihatGain.gain.setValueAtTime(0.2, time);
-        hihatGain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-        
-        hihatOsc.connect(hihatFilter);
-        hihatFilter.connect(hihatGain);
-        hihatGain.connect(this.gainNode);
-        
-        hihatOsc.start(time);
-        hihatOsc.stop(time + 0.05);
-    }
-
-    scheduleBassNote(time, frequency) {
-        const bassOsc = this.audioContext.createOscillator();
-        bassOsc.type = 'sine';
-        bassOsc.frequency.value = frequency;
-        
-        const bassGain = this.audioContext.createGain();
-        bassGain.gain.setValueAtTime(0.5, time);
-        bassGain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
-        
-        bassOsc.connect(bassGain);
-        bassGain.connect(this.gainNode);
-        
-        bassOsc.start(time);
-        bassOsc.stop(time + 0.4);
     }
 
     getAnalyser() {
         return this.analyser;
+    }
+
+    getCurrentTrackInfo() {
+        if (!this.currentTrack) return null;
+        return {
+            name: this.currentTrack.name,
+            bpm: this.currentTrack.bpm,
+            url: this.currentTrack.url
+        };
+    }
+
+    isPlaying() {
+        return this.currentSource !== null;
     }
 }
 
