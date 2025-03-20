@@ -18,22 +18,12 @@ class WorkoutManager {
         };
     }
 
-
     generateWorkout(settings) {
         const { numRounds, roundDuration, restDuration, intensity, workoutType, workoutName, exerciseTemplates } = settings;
+        
+        this.workout.name = workoutName;
+        this.workout.rounds = [];
 
-        // Reset workout object
-        this.workout = {
-            name: workoutName,
-            rounds: [],
-            currentRound: 0,
-            isRunning: false,
-            status: 'ready',
-            timeRemaining: CONFIG.COUNTDOWN_TIME,
-            timer: null
-        };
-
-        // Generate workout based on type
         if (workoutType === 'pyramid') {
             this.generatePyramidWorkout(numRounds, roundDuration, restDuration, intensity, exerciseTemplates);
         } else {
@@ -41,7 +31,7 @@ class WorkoutManager {
         }
 
         this.initializeWorkout();
-        return this.workout;
+        return this.workout;  // Add this line to return the workout object
     }
 
     generateRegularWorkout(numRounds, roundDuration, restDuration, intensity, workoutType, exerciseTemplates) {
