@@ -1,4 +1,5 @@
 import { audioTracks, audioConfig } from '../data/audioTracks.js';
+import SilentModeDetector from './SilentModeDetector.js';
 import { CONFIG } from '../config.js';
 
 class AudioManager {
