@@ -54,17 +54,17 @@ class App {
     async setupEventListeners() {
         try {
             // Workout generation and control
-            const generateWorkoutBtn = document.getElementById('generateWorkoutBtn');
-            if (generateWorkoutBtn) {
-                console.log('Setting up generate workout button handler');
-                // Explicitly bind the method and add debugging
+            const generateBtn = document.getElementById('generateWorkoutBtn');
+            if (generateBtn) {
                 const boundHandler = this.handleGenerateWorkout.bind(this);
-                generateWorkoutBtn.addEventListener('click', () => {
-                    console.log('Generate button clicked, calling handler');
-                    boundHandler();
+                generateBtn.addEventListener('click', async () => {
+                    try {
+                        console.log('Generate button clicked');
+                        await boundHandler();
+                    } catch (error) {
+                        console.error('Error in generate button handler:', error);
+                    }
                 });
-            } else {
-                console.error('Generate workout button not found');
             }
 
             const startPauseBtn = document.getElementById('startPauseBtn');
@@ -153,9 +153,8 @@ class App {
         }
     }
 
-    handleGenerateWorkout() {
+    async handleGenerateWorkout() {
         console.log('handleGenerateWorkout called');
-        console.log('Exercise Templates:', exerciseTemplates); // Debug log
 
         try {
             // Get and validate form elements
@@ -189,10 +188,8 @@ class App {
                 restDuration: parseInt(restDurationInput.value),
                 intensity: parseInt(intensityLevelInput.value),
                 workoutType: workoutTypeInput.value,
-                exerciseTemplates: exerciseTemplates  // Pass the imported templates directly
+                exerciseTemplates: exerciseTemplates
             };
-
-            console.log('Settings before validation:', settings); // Debug log
 
             // Validate numeric values
             if (isNaN(settings.numRounds) || isNaN(settings.roundDuration) ||
@@ -200,22 +197,17 @@ class App {
                 throw new Error('Invalid numeric values in form');
             }
 
-            // Validate workout type
-            if (!exerciseTemplates[settings.workoutType]) {
-                console.error('Available workout types:', Object.keys(exerciseTemplates));
-                throw new Error(`Invalid workout type: ${settings.workoutType}`);
-            }
-
             // Set workout name
             settings.workoutName = workoutNameInput?.value ||
-                `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
+                `${exerciseTemplates[settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
 
-            console.log('Final settings:', settings); // Debug log
+            console.log('Final settings:', settings);
+
+            // Initialize audio if needed
+            await this.audioManager.ensureAudioContext();
 
             // Generate workout
             const workout = this.workoutManager.generateWorkout(settings);
-            console.log('Generated workout:', workout);
-
             if (!workout) {
                 throw new Error('Failed to generate workout');
             }
@@ -230,11 +222,13 @@ class App {
             this.storageManager.saveWorkout(workout);
 
             console.log('Workout generation completed successfully');
+            return workout;
 
         } catch (error) {
             console.error('Error generating workout:', error);
             console.error('Error stack:', error.stack);
             this.uiController.showError(`Failed to generate workout: ${error.message}`);
+            throw error;
         }
     }
 

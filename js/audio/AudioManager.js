@@ -7,11 +7,14 @@ class AudioManager {
         this.analyser = null;
         this.beatSource = null;
         this.visualizationTimer = null;
-        this.currentVolume = 70; // Add volume tracking
+        this.currentVolume = 70; // Default volume
     }
 
     async initialize() {
+        if (this.audioContext) return true; // Already initialized
+
         try {
+            console.log('Initializing audio manager');
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = 256;
@@ -24,6 +27,7 @@ class AudioManager {
             // Set initial volume
             this.setVolume(this.currentVolume);
 
+            console.log('Audio manager initialized successfully');
             return true;
         } catch (error) {
             console.error("Audio initialization error:", error);
@@ -32,33 +36,41 @@ class AudioManager {
     }
 
     async ensureAudioContext() {
-        if (this.audioContext.state === 'suspended') {
-            await this.audioContext.resume();
+        if (!this.audioContext) {
+            await this.initialize();
+        } else if (this.audioContext.state === 'suspended') {
+            try {
+                await this.audioContext.resume();
+            } catch (error) {
+                console.error('Error resuming audio context:', error);
+            }
         }
     }
 
     setVolume(volume) {
-        if (this.gainNode) {
+        if (!this.gainNode) return;
+
+        try {
             // Ensure volume is a number between 0 and 100
             volume = Math.max(0, Math.min(100, parseInt(volume) || 0));
-            this.currentVolume = volume; // Store current volume
+            this.currentVolume = volume;
 
             // Convert to gain value (0 to 1)
             const gainValue = volume / 100;
 
             // Set the gain value with a small ramp to avoid clicks
-            const now = this.audioContext.currentTime;
+            const now = this.audioContext?.currentTime || 0;
             this.gainNode.gain.cancelScheduledValues(now);
             this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
             this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.01);
+        } catch (error) {
+            console.error('Error setting volume:', error);
         }
     }
 
     async startBeat(intensity) {
-        if (!this.audioContext) return;
-
         try {
-            await this.ensureAudioContext(); // Make sure context is running
+            await this.ensureAudioContext();
             this.stopBeat();
             this.createDrumPatterns(intensity);
         } catch (error) {
