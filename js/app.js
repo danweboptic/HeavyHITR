@@ -5,7 +5,6 @@ import WorkoutManager from './workout/WorkoutManager.js';
 import UIController from './ui/UIController.js';
 import StorageManager from './storage/StorageManager.js';
 import VisualizationManager from './visualization/VisualizationManager.js';
-import SilentModeDetector from './audio/SilentModeDetector.js';
 import exerciseTemplates from './data/ExerciseTemplates.js';  // Make sure this is correct path
 
 class App {
