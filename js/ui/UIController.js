@@ -1,88 +1,126 @@
 class UIController {
     constructor() {
-        this.screens = {
-            config: document.getElementById('configScreen'),
-            workout: document.getElementById('workoutScreen'),
-            history: document.getElementById('historyScreen')
+        // Define tab configurations
+        this.tabConfig = {
+            config: {
+                buttonId: 'configTab',
+                panelId: 'configScreen',
+                label: 'Create Workout'
+            },
+            workout: {
+                buttonId: 'workoutTab',
+                panelId: 'workoutScreen',
+                label: 'Current Workout',
+                dynamic: true // This tab is dynamically shown/hidden
+            },
+            history: {
+                buttonId: 'historyTab',
+                panelId: 'historyScreen',
+                label: 'Workout History'
+            }
         };
-
-        // Tab configuration - workout tab handled separately
-        this.tabs = new Map([
-            ['config', { id: 'configTab', label: 'Create Workout' }],
-            ['history', { id: 'historyTab', label: 'Workout History' }]
-        ]);
 
         // Tab styling classes
         this.tabClasses = {
-            base: 'py-2 px-4 font-medium border-b-2',
-            inactive: 'border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
-            active: 'border-primary dark:border-primary-light text-gray-900 dark:text-white'
+            button: {
+                base: 'py-2 px-4 font-medium border-b-2',
+                active: 'border-primary dark:border-primary-light text-gray-900 dark:text-white',
+                inactive: 'border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            },
+            panel: {
+                base: 'tab-panel',
+                hidden: 'hidden'
+            }
         };
 
+        // Track mute state and volume
         this.isMuted = false;
         this.previousVolume = 70;
 
+        this.currentTab = 'config';
         this.initializeTabs();
     }
 
     initializeTabs() {
-        // Hide workout tab initially
-        const workoutTab = document.getElementById('workoutTab');
+        // Initialize tab event listeners
+        Object.keys(this.tabConfig).forEach(tabId => {
+            const button = document.getElementById(this.tabConfig[tabId].buttonId);
+            if (button) {
+                button.addEventListener('click', () => this.switchTab(tabId));
+            }
+        });
+
+        // Set initial tab state
+        this.switchTab('config');
+
+        // Ensure workout tab is hidden initially
+        const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
         if (workoutTab) {
             workoutTab.classList.add('hidden');
         }
-
-        // Set first tab (config) as active by default
-        this.showScreen('config');
     }
 
-    showScreen(screenId) {
-        // Hide all screens first
-        Object.values(this.screens).forEach(screen => {
-            if (screen) {
-                screen.classList.add('hidden');
-            }
-        });
+    switchTab(tabId) {
+        // Validate tab exists
+        if (!this.tabConfig[tabId]) return;
 
-        // Show the target screen
-        const targetScreen = this.screens[screenId];
-        if (targetScreen) {
-            targetScreen.classList.remove('hidden');
+        // Don't switch to workout tab if it's hidden
+        const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
+        if (tabId === 'workout' && workoutTab?.classList.contains('hidden')) {
+            return;
         }
 
-        // Update tab states
-        this.updateTabStates(screenId);
-    }
-
-    updateTabStates(activeTabId) {
-        // Update all tabs with consistent styling
-        const allTabs = [...this.tabs.entries(), ['workout', { id: 'workoutTab' }]];
-
-        allTabs.forEach(([tabId, tabConfig]) => {
-            const tabElement = document.getElementById(tabConfig.id);
-            if (tabElement && (!tabElement.classList.contains('hidden') || tabId === 'workout')) {
-                const isActive = tabId === activeTabId;
-                const classes = [
-                    this.tabClasses.base,
-                    isActive ? this.tabClasses.active : this.tabClasses.inactive
-                ];
-                tabElement.className = classes.join(' ');
-                tabElement.setAttribute('aria-selected', isActive.toString());
+        // Hide all panels first
+        Object.keys(this.tabConfig).forEach(id => {
+            const panel = document.getElementById(this.tabConfig[id].panelId);
+            if (panel) {
+                panel.classList.add(this.tabClasses.panel.hidden);
             }
         });
+
+        // Show only the target panel
+        const targetPanel = document.getElementById(this.tabConfig[tabId].panelId);
+        if (targetPanel) {
+            targetPanel.classList.remove(this.tabClasses.panel.hidden);
+        }
+
+        // Update all tab buttons
+        Object.keys(this.tabConfig).forEach(id => {
+            const button = document.getElementById(this.tabConfig[id].buttonId);
+            if (button && !button.classList.contains('hidden')) {
+                // Update button state
+                const isActive = id === tabId;
+                button.className = `${this.tabClasses.button.base} ${
+                    isActive ? this.tabClasses.button.active : this.tabClasses.button.inactive
+                }`;
+                button.setAttribute('aria-selected', isActive.toString());
+            }
+        });
+
+        this.currentTab = tabId;
     }
 
-    toggleWorkoutTab(show) {
-        const workoutTab = document.getElementById('workoutTab');
+    showWorkoutTab() {
+        const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
         if (workoutTab) {
-            if (show) {
-                workoutTab.classList.remove('hidden');
-                this.showScreen('workout');
-            } else {
-                workoutTab.classList.add('hidden');
-                this.showScreen('config');
+            workoutTab.classList.remove('hidden');
+            this.switchTab('workout');
+        }
+    }
+
+    hideWorkoutTab() {
+        const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
+        const workoutPanel = document.getElementById(this.tabConfig.workout.panelId);
+
+        if (workoutTab) {
+            workoutTab.classList.add('hidden');
+            if (workoutPanel) {
+                workoutPanel.classList.add(this.tabClasses.panel.hidden);
             }
         }
+
+        // Always switch to config when hiding workout tab
+        this.switchTab('config');
     }
 
     updateUI(workout) {
@@ -181,9 +219,9 @@ class UIController {
 
     showError(message) {
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
+        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50';
         errorDiv.textContent = message;
-        document.body.prepend(errorDiv);
+        document.body.appendChild(errorDiv);
 
         // Remove the error message after 5 seconds
         setTimeout(() => {
@@ -204,7 +242,7 @@ class UIController {
 
     handleVolumeButtonClick() {
         const volumeControl = document.getElementById('volumeControl');
-        if (!volumeControl) return;
+        if (!volumeControl) return 0;
 
         if (this.isMuted) {
             // Unmute: restore previous volume
@@ -218,9 +256,9 @@ class UIController {
         }
 
         // Update the volume icon
-        this.updateVolumeIcon(volumeControl.value);
+        this.updateVolumeIcon(parseInt(volumeControl.value));
 
-        // Return the current volume value so the audio manager can use it
+        // Return the current volume value
         return parseInt(volumeControl.value);
     }
 
@@ -228,12 +266,20 @@ class UIController {
         const volumeBtn = document.getElementById('volumeBtn');
         if (!volumeBtn) return;
 
-        // Update the volume icon SVG based on volume level
-        const iconPath = volume === 0
-            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />'
-            : volume < 50
-                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072" />'
-                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728" />';
+        // Convert volume to number if it's a string
+        volume = parseInt(volume);
+
+        // SVG paths for different volume states
+        const paths = {
+            mute: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />',
+            low: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072" />',
+            high: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728" />'
+        };
+
+        // Select the appropriate icon based on volume level
+        const iconPath = volume === 0 ? paths.mute :
+                        volume < 50 ? paths.low :
+                        paths.high;
 
         volumeBtn.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

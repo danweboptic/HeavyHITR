@@ -21,8 +21,6 @@ class App {
             this.speechManager,
             this.uiController
         );
-
-        this.initialize();
     }
 
     async initialize() {
@@ -31,9 +29,7 @@ class App {
             await this.speechManager.initialize();
             this.visualizationManager.initialize();
             this.applyTheme();
-            this.setupEventListeners();
-
-            // No need to explicitly call showScreen here as it's handled in UIController constructor
+            await this.setupEventListeners(); // Made async
             this.uiController.updateWorkoutHistory(this.storageManager.getWorkoutHistory());
         } catch (error) {
             console.error('Failed to initialize app:', error);
@@ -41,91 +37,156 @@ class App {
         }
     }
 
-    setupEventListeners() {
+    async setupEventListeners() {
         try {
             // Workout generation and control
-            document.getElementById('generateWorkoutBtn')
-                .addEventListener('click', () => this.handleGenerateWorkout());
+            const generateWorkoutBtn = document.getElementById('generateWorkoutBtn');
+            if (generateWorkoutBtn) {
+                generateWorkoutBtn.addEventListener('click', () => this.handleGenerateWorkout());
+            }
 
-            document.getElementById('startPauseBtn')
-                .addEventListener('click', () => this.handleStartPause());
+            const startPauseBtn = document.getElementById('startPauseBtn');
+            if (startPauseBtn) {
+                startPauseBtn.addEventListener('click', async () => {
+                    await this.audioManager.ensureAudioContext();
+                    this.handleStartPause();
+                });
+            }
 
-            document.getElementById('resetBtn')
-                .addEventListener('click', () => this.handleBackToConfig());
+            const resetBtn = document.getElementById('resetBtn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => this.handleBackToConfig());
+            }
 
-            document.getElementById('backToConfigBtn')
-                .addEventListener('click', () => this.handleBackToConfig());
+            const backToConfigBtn = document.getElementById('backToConfigBtn');
+            if (backToConfigBtn) {
+                backToConfigBtn.addEventListener('click', () => this.handleBackToConfig());
+            }
 
             // Tab switching
-            document.getElementById('configTab')
-                .addEventListener('click', () => this.handleTabSwitch('config'));
+            const configTab = document.getElementById('configTab');
+            if (configTab) {
+                configTab.addEventListener('click', () => this.handleTabSwitch('config'));
+            }
 
-            document.getElementById('historyTab')
-                .addEventListener('click', () => this.handleTabSwitch('history'));
+            const historyTab = document.getElementById('historyTab');
+            if (historyTab) {
+                historyTab.addEventListener('click', () => this.handleTabSwitch('history'));
+            }
 
             // Theme toggle
-            document.getElementById('themeToggle')
-                .addEventListener('click', () => this.handleThemeToggle());
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => this.handleThemeToggle());
+            }
 
             // Volume controls
-            document.getElementById('volumeBtn')
-                .addEventListener('click', () => this.uiController.handleVolumeButtonClick());
+            const volumeBtn = document.getElementById('volumeBtn');
+            const volumeControl = document.getElementById('volumeControl');
 
-            document.getElementById('volumeControl')
-                .addEventListener('input', (e) => {
-                    this.audioManager.setVolume(e.target.value);
-                    this.uiController.updateVolumeIcon();
+            if (volumeBtn) {
+                volumeBtn.addEventListener('click', async () => {
+                    const volume = this.uiController.handleVolumeButtonClick();
+                    await this.audioManager.ensureAudioContext();
+                    this.audioManager.setVolume(volume);
+                    this.speechManager.setVolume(volume);
                 });
+            }
+
+            if (volumeControl) {
+                volumeControl.addEventListener('input', async (e) => {
+                    const volume = parseInt(e.target.value);
+                    await this.audioManager.ensureAudioContext();
+                    this.audioManager.setVolume(volume);
+                    this.speechManager.setVolume(volume);
+                    this.uiController.updateVolumeIcon(volume);
+                });
+
+                // Set initial volume
+                const initialVolume = parseInt(volumeControl.value);
+                this.audioManager.setVolume(initialVolume);
+                this.speechManager.setVolume(initialVolume);
+                this.uiController.updateVolumeIcon(initialVolume);
+            }
 
             // Intensity slider
             const intensitySlider = document.getElementById('intensityLevel');
-            intensitySlider.addEventListener('input', (e) => {
-                const value = ((e.target.value - e.target.min) / (e.target.max - e.target.min)) * 100;
-                e.target.style.setProperty('--range-progress', `${value}%`);
-                this.uiController.updateIntensityDisplay();
-            });
+            if (intensitySlider) {
+                intensitySlider.addEventListener('input', (e) => {
+                    const value = ((e.target.value - e.target.min) / (e.target.max - e.target.min)) * 100;
+                    e.target.style.setProperty('--range-progress', `${value}%`);
+                    this.uiController.updateIntensityDisplay();
+                });
 
-            // Set initial intensity value
-            const value = ((intensitySlider.value - intensitySlider.min) /
-                          (intensitySlider.max - intensitySlider.min)) * 100;
-            intensitySlider.style.setProperty('--range-progress', `${value}%`);
-            this.uiController.updateIntensityDisplay();
+                // Set initial intensity value
+                const value = ((intensitySlider.value - intensitySlider.min) /
+                    (intensitySlider.max - intensitySlider.min)) * 100;
+                intensitySlider.style.setProperty('--range-progress', `${value}%`);
+                this.uiController.updateIntensityDisplay();
+            }
 
         } catch (error) {
             console.error('Failed to setup event listeners:', error);
-            this.handleInitializationError(error);
+            throw error; // Propagate error to initialize method
         }
     }
 
     handleGenerateWorkout() {
         try {
+            // Get and validate form elements
+            const numRoundsInput = document.getElementById('numRounds');
+            const roundDurationInput = document.getElementById('roundDuration');
+            const restDurationInput = document.getElementById('restDuration');
+            const intensityLevelInput = document.getElementById('intensityLevel');
+            const workoutTypeInput = document.getElementById('workoutType');
+            const workoutNameInput = document.getElementById('workoutName');
+
+            // Validate all required elements exist
+            if (!numRoundsInput || !roundDurationInput || !restDurationInput ||
+                !intensityLevelInput || !workoutTypeInput) {
+                throw new Error('Required form elements are missing');
+            }
+
+            // Validate and parse inputs
             const settings = {
-                numRounds: parseInt(document.getElementById('numRounds').value),
-                roundDuration: parseInt(document.getElementById('roundDuration').value),
-                restDuration: parseInt(document.getElementById('restDuration').value),
-                intensity: parseInt(document.getElementById('intensityLevel').value),
-                workoutType: document.getElementById('workoutType').value,
+                numRounds: parseInt(numRoundsInput.value),
+                roundDuration: parseInt(roundDurationInput.value),
+                restDuration: parseInt(restDurationInput.value),
+                intensity: parseInt(intensityLevelInput.value),
+                workoutType: workoutTypeInput.value,
                 exerciseTemplates: exerciseTemplates
             };
 
+            // Validate numeric values
+            if (isNaN(settings.numRounds) || isNaN(settings.roundDuration) ||
+                isNaN(settings.restDuration) || isNaN(settings.intensity)) {
+                throw new Error('Invalid numeric values in form');
+            }
+
             // Set workout name
-            const workoutName = document.getElementById('workoutName').value;
-            settings.workoutName = workoutName ||
+            settings.workoutName = workoutNameInput?.value ||
                 `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
 
-            // Use workoutManager instead of workoutGenerator
+            // Generate workout
             const workout = this.workoutManager.generateWorkout(settings);
-            if (workout) {
-                this.currentWorkout = workout;
-                this.uiController.toggleWorkoutTab(true);
-                this.uiController.updateUI(workout);
-                this.storageManager.saveWorkout(workout);
+
+            if (!workout) {
+                throw new Error('Failed to generate workout');
             }
+
+            // Show workout tab and save
+            this.uiController.showWorkoutTab();
+            this.storageManager.saveWorkout(workout);
+
+            // Log success
+            console.log('Workout generated successfully:', workout);
+
         } catch (error) {
             console.error('Error generating workout:', error);
-            this.uiController.showError('Failed to generate workout. Please try again.');
+            this.uiController.showError(`Failed to generate workout: ${error.message}`);
         }
     }
+
 
     handleStartPause() {
         try {
@@ -142,10 +203,10 @@ class App {
         }
     }
 
-    handleTabSwitch(tab) {
+    handleTabSwitch(tabId) {
         try {
-            this.uiController.showScreen(tab);
-            if (tab === 'history') {
+            this.uiController.switchTab(tabId);
+            if (tabId === 'history') {
                 this.uiController.updateWorkoutHistory(this.storageManager.getWorkoutHistory());
             }
         } catch (error) {
@@ -156,9 +217,21 @@ class App {
 
     handleBackToConfig() {
         try {
-            this.workoutManager.reset();  // Make sure to reset the workout
-            this.uiController.toggleWorkoutTab(false);
+            // Stop the workout and reset it first
+            this.workoutManager.reset();
+
+            // Hide workout tab and ensure we switch to config view
+            this.uiController.hideWorkoutTab();
+
+            // Reset any workout-specific UI elements
+            const startPauseBtn = document.getElementById('startPauseBtn');
+            if (startPauseBtn) {
+                startPauseBtn.textContent = 'Start';
+            }
+
+            // Clear any existing workout data
             this.currentWorkout = null;
+
         } catch (error) {
             console.error('Error returning to config:', error);
             this.uiController.showError('Error returning to settings. Please try again.');
@@ -187,9 +260,14 @@ class App {
 
     handleInitializationError(error) {
         const errorMessage = document.createElement('div');
-        errorMessage.className = 'error-message';
+        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50';
         errorMessage.textContent = `Initialization error: ${error.message}`;
-        document.body.prepend(errorMessage);
+        document.body.appendChild(errorMessage);
+
+        // Remove the error message after 5 seconds
+        setTimeout(() => {
+            errorMessage.remove();
+        }, 5000);
     }
 }
 
@@ -200,9 +278,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
         console.error('Failed to create App instance:', error);
         const errorMessage = document.createElement('div');
-        errorMessage.className = 'error-message';
+        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50';
         errorMessage.textContent = `Failed to initialize: ${error.message}`;
-        document.body.prepend(errorMessage);
+        document.body.appendChild(errorMessage);
     }
 });
 

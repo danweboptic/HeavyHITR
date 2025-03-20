@@ -7,6 +7,7 @@ class AudioManager {
         this.analyser = null;
         this.beatSource = null;
         this.visualizationTimer = null;
+        this.currentVolume = 70; // Add volume tracking
     }
 
     async initialize() {
@@ -14,12 +15,15 @@ class AudioManager {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = 256;
-            
+
             // Create gain node
             this.gainNode = this.audioContext.createGain();
             this.gainNode.connect(this.analyser);
             this.analyser.connect(this.audioContext.destination);
-            
+
+            // Set initial volume
+            this.setVolume(this.currentVolume);
+
             return true;
         } catch (error) {
             console.error("Audio initialization error:", error);
@@ -27,16 +31,34 @@ class AudioManager {
         }
     }
 
-    setVolume(volume) {
-        if (this.gainNode) {
-            this.gainNode.gain.value = volume / 100;
+    async ensureAudioContext() {
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
         }
     }
 
-    startBeat(intensity) {
+    setVolume(volume) {
+        if (this.gainNode) {
+            // Ensure volume is a number between 0 and 100
+            volume = Math.max(0, Math.min(100, parseInt(volume) || 0));
+            this.currentVolume = volume; // Store current volume
+
+            // Convert to gain value (0 to 1)
+            const gainValue = volume / 100;
+
+            // Set the gain value with a small ramp to avoid clicks
+            const now = this.audioContext.currentTime;
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+            this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.01);
+        }
+    }
+
+    async startBeat(intensity) {
         if (!this.audioContext) return;
 
         try {
+            await this.ensureAudioContext(); // Make sure context is running
             this.stopBeat();
             this.createDrumPatterns(intensity);
         } catch (error) {

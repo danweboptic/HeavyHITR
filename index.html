@@ -56,175 +56,177 @@
             <p class="text-gray-600 dark:text-gray-400">Create your custom heavy bag workout with voice guidance and rhythm</p>
         </header>
 
-        <!-- Main content area with tabs -->
-        <div class="mb-8">
-            <!-- Tab Navigation -->
-            <nav class="flex border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
-                <button id="configTab"
-                        role="tab"
-                        aria-selected="true"
-                        aria-controls="configScreen"
-                        class="py-2 px-4 font-medium border-b-2 border-primary dark:border-primary-light text-gray-900 dark:text-white">
-                    Create Workout
-                </button>
-                <button id="workoutTab"
-                        role="tab"
-                        aria-selected="false"
-                        aria-controls="workoutScreen"
-                        class="hidden py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                    Current Workout
-                </button>
-                <button id="historyTab"
-                        role="tab"
-                        aria-selected="false"
-                        aria-controls="historyScreen"
-                        class="py-2 px-4 font-medium border-b-2 border-transparent hover:border-primary dark:hover:border-primary-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                    Workout History
-                </button>
-            </nav>
+        <div class="tab-content">
 
-            <!-- Workout Configuration Screen -->
-            <div id="configScreen"
-                 role="tabpanel"
-                 aria-labelledby="configTab"
-                 class="block">
-                <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md mb-6 border border-transparent dark:border-gray-700">
-                    <h2 class="text-xl font-bold mb-4 gradient-text">Workout Settings</h2>
+            <!-- Main content area with tabs -->
+            <div class="mb-8">
+                <!-- Tab Navigation -->
+                <nav class="flex border-b border-gray-200 dark:border-gray-700 mb-4" role="tablist">
+                    <button id="configTab"
+                            role="tab"
+                            aria-controls="configScreen"
+                            aria-selected="true"
+                            class="tab-button active"
+                            data-tab="config">
+                        Create Workout
+                    </button>
+                    <button id="workoutTab"
+                            role="tab"
+                            aria-controls="workoutScreen"
+                            aria-selected="false"
+                            class="tab-button hidden"
+                            data-tab="workout">
+                        Current Workout
+                    </button>
+                    <button id="historyTab"
+                            role="tab"
+                            aria-controls="historyScreen"
+                            aria-selected="false"
+                            class="tab-button"
+                            data-tab="history">
+                        Workout History
+                    </button>
+                </nav>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <!-- Round Duration -->
-                        <div>
-                            <label for="roundDuration" class="block text-sm font-medium mb-1">Round Duration (seconds)</label>
-                            <input type="number" id="roundDuration" value="60" min="10" max="180" step="5"
-                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        </div>
+                <!-- Workout Configuration Screen -->
+                <div id="configScreen" role="tabpanel" aria-labelledby="configTab" class="tab-panel">
 
-                        <!-- Rest Duration -->
-                        <div>
-                            <label for="restDuration" class="block text-sm font-medium mb-1">Rest Duration (seconds)</label>
-                            <input type="number" id="restDuration" value="30" min="5" max="90" step="5"
-                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        </div>
-                    </div>
+                    <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md mb-6 border border-transparent dark:border-gray-700">
+                        <h2 class="text-xl font-bold mb-4 gradient-text">Workout Settings</h2>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <!-- Number of Rounds -->
-                        <div>
-                            <label for="numRounds" class="block text-sm font-medium mb-1">Number of Rounds</label>
-                            <input type="number" id="numRounds" value="3" min="1" max="12"
-                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <!-- Round Duration -->
+                            <div>
+                                <label for="roundDuration" class="block text-sm font-medium mb-1">Round Duration (seconds)</label>
+                                <input type="number" id="roundDuration" value="60" min="10" max="180" step="5"
+                                    class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                            </div>
 
-                        <!-- Intensity Level -->
-                        <div>
-                            <label for="intensityLevel" class="block text-sm font-medium mb-1">Intensity Level</label>
-                            <div class="flex items-center gap-2">
-                                <input type="range" id="intensityLevel" min="1" max="5" step="1" value="3" class="flex-1 h-2 rounded-lg appearance-none cursor-pointer gradient-range">
-                                <span id="intensityDisplay" class="text-sm font-medium">Medium</span>
+                            <!-- Rest Duration -->
+                            <div>
+                                <label for="restDuration" class="block text-sm font-medium mb-1">Rest Duration (seconds)</label>
+                                <input type="number" id="restDuration" value="30" min="5" max="90" step="5"
+                                    class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Workout Type -->
-                    <div class="mb-6">
-                        <label for="workoutType" class="block text-sm font-medium mb-1">Workout Type</label>
-                        <select id="workoutType" class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                            <option value="technical">Technical Focus</option>
-                            <option value="power">Power Focus</option>
-                            <option value="speed">Speed Focus</option>
-                            <option value="beginner" selected>Beginner Mix</option>
-                            <option value="intermediate">Intermediate Mix</option>
-                            <option value="advanced">Advanced Mix</option>
-                            <option value="pyramid">Pyramid (Build-up & Cool-down)</option>
-                        </select>
-                    </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <!-- Number of Rounds -->
+                            <div>
+                                <label for="numRounds" class="block text-sm font-medium mb-1">Number of Rounds</label>
+                                <input type="number" id="numRounds" value="3" min="1" max="12"
+                                    class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                            </div>
 
-                    <!-- Workout Name -->
-                    <div class="mb-6">
-                        <label for="workoutName" class="block text-sm font-medium mb-1">Workout Name (for saving)</label>
-                        <input type="text" id="workoutName" placeholder="My Boxing Workout"
-                            class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
-                    </div>
+                            <!-- Intensity Level -->
+                            <div>
+                                <label for="intensityLevel" class="block text-sm font-medium mb-1">Intensity Level</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="range" id="intensityLevel" min="1" max="5" step="1" value="3" class="flex-1 h-2 rounded-lg appearance-none cursor-pointer gradient-range">
+                                    <span id="intensityDisplay" class="text-sm font-medium">Medium</span>
+                                </div>
+                            </div>
+                        </div>
 
-                    <!-- Generate Workout Button -->
-                    <button id="generateWorkoutBtn" class="w-full gradient-btn text-white font-bold py-3 px-4 rounded-md transition-colors">
-                        Generate Workout
-                    </button>
-                </div>
-            </div>
+                        <!-- Workout Type -->
+                        <div class="mb-6">
+                            <label for="workoutType" class="block text-sm font-medium mb-1">Workout Type</label>
+                            <select id="workoutType" class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                                <option value="technical">Technical Focus</option>
+                                <option value="power">Power Focus</option>
+                                <option value="speed">Speed Focus</option>
+                                <option value="beginner" selected>Beginner Mix</option>
+                                <option value="intermediate">Intermediate Mix</option>
+                                <option value="advanced">Advanced Mix</option>
+                                <option value="pyramid">Pyramid (Build-up & Cool-down)</option>
+                            </select>
+                        </div>
 
-            <!-- Workout History Screen -->
-            <div id="historyScreen"
-                 role="tabpanel"
-                 aria-labelledby="historyTab"
-                 class="hidden">
-                <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md border border-transparent dark:border-gray-700">
-                    <h2 class="text-xl font-bold mb-4 gradient-text">Your Saved Workouts</h2>
+                        <!-- Workout Name -->
+                        <div class="mb-6">
+                            <label for="workoutName" class="block text-sm font-medium mb-1">Workout Name (for saving)</label>
+                            <input type="text" id="workoutName" placeholder="My Boxing Workout"
+                                class="w-full px-3 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+                        </div>
 
-                    <div id="emptyHistoryMessage" class="py-6 text-center text-gray-500 dark:text-gray-400">
-                        <p>No workouts saved yet. Create your first workout!</p>
-                    </div>
-
-                    <div id="workoutHistoryList" class="space-y-3">
-                        <!-- Workout cards will be inserted here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Workout Execution Screen -->
-        <div id="workoutScreen"
-             role="tabpanel"
-             aria-labelledby="workoutTab"
-             class="hidden">
-            <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md mb-6 border border-transparent dark:border-gray-700">
-                <div class="text-center mb-6">
-                    <h2 id="workoutStatus" class="text-2xl font-bold mb-2 gradient-text">Preparing Workout...</h2>
-                    <p id="currentExercise" class="text-lg text-gray-700 dark:text-gray-300">Get ready!</p>
-                </div>
-
-                <div class="mb-6">
-                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        <span>Round <span id="currentRound">0</span>/<span id="totalRounds">0</span></span>
-                        <span id="roundType" class="font-medium">-</span>
-                    </div>
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6">
-                        <div id="progressBar" class="gradient-progress h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <div class="flex justify-center mb-4">
-                        <div id="timerDisplay" class="timer-display text-5xl md:text-7xl font-bold gradient-text">00:00</div>
-                    </div>
-                </div>
-
-                <!-- Beat visualization -->
-                <div class="mb-4">
-                    <canvas id="beatVisualization" class="w-full rounded-lg bg-black/10 dark:bg-white/5" width="800" height="200"></canvas>
-                </div>
-
-                <div class="flex justify-center space-x-4 mb-6">
-                    <button id="startPauseBtn" class="gradient-btn text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
-                        Start
-                    </button>
-                    <button id="resetBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
-                        Reset
-                    </button>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <button id="volumeBtn" class="text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                            </svg>
+                        <!-- Generate Workout Button -->
+                        <button id="generateWorkoutBtn" class="w-full gradient-btn text-white font-bold py-3 px-4 rounded-md transition-colors">
+                            Generate Workout
                         </button>
-                        <input type="range" id="volumeControl" min="0" max="100" value="70" class="w-20 md:w-32 h-2 ml-1 accent-primary">
                     </div>
-                    <button id="backToConfigBtn" class="gradient-text hover:underline">
-                        Back to Settings
-                    </button>
+                </div>
+
+                <!-- Workout History Screen -->
+                <div id="historyScreen" role="tabpanel" aria-labelledby="historyTab" class="tab-panel hidden">
+
+                    <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md border border-transparent dark:border-gray-700">
+                        <h2 class="text-xl font-bold mb-4 gradient-text">Your Saved Workouts</h2>
+
+                        <div id="emptyHistoryMessage" class="py-6 text-center text-gray-500 dark:text-gray-400">
+                            <p>No workouts saved yet. Create your first workout!</p>
+                        </div>
+
+                        <div id="workoutHistoryList" class="space-y-3">
+                            <!-- Workout cards will be inserted here -->
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Workout Execution Screen -->
+            <div id="workoutScreen" role="tabpanel" aria-labelledby="workoutTab" class="tab-panel hidden">
+
+                <div class="bg-gray-50 dark:bg-dark-card p-6 rounded-lg shadow-md mb-6 border border-transparent dark:border-gray-700">
+                    <div class="text-center mb-6">
+                        <h2 id="workoutStatus" class="text-2xl font-bold mb-2 gradient-text">Preparing Workout...</h2>
+                        <p id="currentExercise" class="text-lg text-gray-700 dark:text-gray-300">Get ready!</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            <span>Round <span id="currentRound">0</span>/<span id="totalRounds">0</span></span>
+                            <span id="roundType" class="font-medium">-</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6">
+                            <div id="progressBar" class="gradient-progress h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-center mb-4">
+                            <div id="timerDisplay" class="timer-display text-5xl md:text-7xl font-bold gradient-text">00:00</div>
+                        </div>
+                    </div>
+
+                    <!-- Beat visualization -->
+                    <div class="mb-4">
+                        <canvas id="beatVisualization" class="w-full rounded-lg bg-black/10 dark:bg-white/5" width="800" height="200"></canvas>
+                    </div>
+
+                    <div class="flex justify-center space-x-4 mb-6">
+                        <button id="startPauseBtn" class="gradient-btn text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
+                            Start
+                        </button>
+                        <button id="resetBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-colors">
+                            Reset
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <button id="volumeBtn" class="text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                </svg>
+                            </button>
+                            <input type="range" id="volumeControl" min="0" max="100" value="70" class="w-20 md:w-32 h-2 ml-1 accent-primary">
+                        </div>
+                        <button id="backToConfigBtn" class="gradient-text hover:underline">
+                            Back to Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
+
     </div>
 
     <!-- Service Worker Registration -->

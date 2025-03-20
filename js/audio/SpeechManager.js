@@ -4,6 +4,7 @@ class SpeechManager {
         this.voice = null;
         this.speechQueue = [];
         this.currentUtterance = null;
+        this.currentVolume = 1.0; // Add volume tracking
     }
 
     async initialize() {
@@ -44,6 +45,16 @@ class SpeechManager {
         return voices.find(v => v.lang.includes('en')) || voices[0];
     }
 
+    setVolume(volume) {
+        // Convert 0-100 scale to 0-1 scale
+        this.currentVolume = Math.max(0, Math.min(100, parseInt(volume) || 0)) / 100;
+
+        // Update current utterance if one is playing
+        if (this.currentUtterance) {
+            this.currentUtterance.volume = this.currentVolume;
+        }
+    }
+
     speak(text, priority = false) {
         if (!this.synthesis || !this.voice) return;
 
@@ -51,7 +62,7 @@ class SpeechManager {
         utterance.voice = this.voice;
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
-        utterance.volume = 1.0;
+        utterance.volume = this.currentVolume; // Use current volume setting
 
         if (priority) {
             this.synthesis.cancel();

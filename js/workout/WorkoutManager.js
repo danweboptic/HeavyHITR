@@ -7,25 +7,33 @@ class WorkoutManager {
         this.audioManager = audioManager;
         this.speechManager = speechManager;
         this.uiController = uiController;
-        
         this.workout = {
-            name: "",
+            name: '',
             rounds: [],
             currentRound: 0,
             isRunning: false,
-            timer: null,
-            timeRemaining: 0,
-            totalTime: 0,
-            status: 'ready'
+            status: 'ready',
+            timeRemaining: CONFIG.COUNTDOWN_TIME,
+            timer: null
         };
     }
 
+
     generateWorkout(settings) {
         const { numRounds, roundDuration, restDuration, intensity, workoutType, workoutName, exerciseTemplates } = settings;
-        
-        this.workout.name = workoutName;
-        this.workout.rounds = [];
 
+        // Reset workout object
+        this.workout = {
+            name: workoutName,
+            rounds: [],
+            currentRound: 0,
+            isRunning: false,
+            status: 'ready',
+            timeRemaining: CONFIG.COUNTDOWN_TIME,
+            timer: null
+        };
+
+        // Generate workout based on type
         if (workoutType === 'pyramid') {
             this.generatePyramidWorkout(numRounds, roundDuration, restDuration, intensity, exerciseTemplates);
         } else {
@@ -33,6 +41,7 @@ class WorkoutManager {
         }
 
         this.initializeWorkout();
+        return this.workout;
     }
 
     generateRegularWorkout(numRounds, roundDuration, restDuration, intensity, workoutType, exerciseTemplates) {
