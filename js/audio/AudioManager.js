@@ -13,30 +13,43 @@ class AudioManager {
         this.tracks = audioTracks;
         this.audioBuffers = new Map();
         this.crossfadeInProgress = false;
+        this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        this.audioInitialized = false;
     }
 
     async initialize() {
         try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256;
-
-            // Create gain node for volume control
-            this.gainNode = this.audioContext.createGain();
-            this.gainNode.connect(this.analyser);
-            this.analyser.connect(this.audioContext.destination);
-
-            // Set initial volume
-            this.setVolume(this.currentVolume);
-
-            // Preload audio files
-            await this.preloadTracks();
-
+            // Defer creation of AudioContext on iOS until user interaction
+            if (!this.isIOS) {
+                await this.initAudioContext();
+            }
             return true;
         } catch (error) {
             console.error("Audio initialization error:", error);
             return false;
         }
+    }
+
+    async initAudioContext() {
+        if (this.audioContext) return;
+
+        // Use newer AudioContext options for iOS
+        const contextOptions = {
+            latencyHint: 'interactive',
+            sampleRate: 44100
+        };
+
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 256;
+
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
+
+        this.setVolume(this.currentVolume);
+        await this.preloadTracks();
+        this.audioInitialized = true;
     }
 
     async preloadTracks() {
@@ -65,16 +78,26 @@ class AudioManager {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const arrayBuffer = await response.arrayBuffer();
+
+            // Handle potential null audioContext on iOS
+            if (!this.audioContext) {
+                await this.initAudioContext();
+            }
+
             const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
             this.audioBuffers.set(url, audioBuffer);
             console.log(`Loaded track: ${url}`);
         } catch (error) {
             console.error(`Error loading track ${url}:`, error);
-            throw error; // Propagate error for proper handling
+            throw error;
         }
     }
 
     async ensureAudioContext() {
+        if (!this.audioContext) {
+            await this.initAudioContext();
+        }
+
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
@@ -88,12 +111,13 @@ class AudioManager {
 
         // Convert to gain value (0 to 1)
         const gainValue = volume / 100;
-        const now = this.audioContext.currentTime;
 
-        // Apply volume change with small ramp to avoid clicks
-        this.gainNode.gain.cancelScheduledValues(now);
-        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-        this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.05);
+        if (this.gainNode && this.audioContext) {
+            const now = this.audioContext.currentTime;
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+            this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.05);
+        }
     }
 
     getIntensityTracks(intensity) {
@@ -103,10 +127,14 @@ class AudioManager {
     }
 
     async startBeat(intensity = 3) {
-        if (!this.audioContext) return;
-
         try {
+            // Ensure audio context is initialized and resumed
             await this.ensureAudioContext();
+
+            if (!this.audioInitialized) {
+                console.warn("Audio system not fully initialized");
+                return;
+            }
 
             // If there's a current track, crossfade to the new one
             const shouldCrossfade = this.currentSource !== null;
@@ -118,6 +146,9 @@ class AudioManager {
 
         } catch (error) {
             console.error("Error starting beat:", error);
+            if (this.isIOS) {
+                throw new Error("Please ensure your device's silent mode is off and volume is up");
+            }
         }
     }
 
@@ -125,97 +156,98 @@ class AudioManager {
         const intensityTracks = this.getIntensityTracks(intensity);
         const track = intensityTracks[Math.floor(Math.random() * intensityTracks.length)];
 
-        // Create and configure source
-        const source = this.audioContext.createBufferSource();
-        source.buffer = this.audioBuffers.get(track.url);
-        source.loop = true;
+        try {
+            const source = this.audioContext.createBufferSource();
+            source.buffer = this.audioBuffers.get(track.url);
+            source.loop = true;
 
-        // Apply playback rate based on intensity
-        const speedMultiplier = 1 + ((intensity - 3) * audioConfig.intensitySpeedChange);
-        source.playbackRate.value = speedMultiplier;
+            const speedMultiplier = 1 + ((intensity - 3) * audioConfig.intensitySpeedChange);
+            source.playbackRate.value = speedMultiplier;
 
-        // Fade in
-        const now = this.audioContext.currentTime;
-        this.gainNode.gain.setValueAtTime(0, now);
-        this.gainNode.gain.linearRampToValueAtTime(
-            this.currentVolume / 100,
-            now + audioConfig.fadeInDuration
-        );
+            const now = this.audioContext.currentTime;
+            this.gainNode.gain.setValueAtTime(0, now);
+            this.gainNode.gain.linearRampToValueAtTime(
+                this.currentVolume / 100,
+                now + audioConfig.fadeInDuration
+            );
 
-        source.connect(this.gainNode);
-        source.start(0);
+            source.connect(this.gainNode);
+            source.start(0);
 
-        this.currentSource = source;
-        this.currentTrack = track;
+            this.currentSource = source;
+            this.currentTrack = track;
+
+        } catch (error) {
+            console.error("Error in startNewTrack:", error);
+            throw error;
+        }
     }
 
     async crossfadeToNewTrack(intensity) {
         if (this.crossfadeInProgress) return;
         this.crossfadeInProgress = true;
 
-        const intensityTracks = this.getIntensityTracks(intensity);
-        const newTrack = intensityTracks[Math.floor(Math.random() * intensityTracks.length)];
+        try {
+            const intensityTracks = this.getIntensityTracks(intensity);
+            const newTrack = intensityTracks[Math.floor(Math.random() * intensityTracks.length)];
 
-        // Create new gain node for the new track
-        const newGainNode = this.audioContext.createGain();
-        newGainNode.connect(this.analyser);
+            const newGainNode = this.audioContext.createGain();
+            newGainNode.connect(this.analyser);
 
-        // Create and configure new source
-        const newSource = this.audioContext.createBufferSource();
-        newSource.buffer = this.audioBuffers.get(newTrack.url);
-        newSource.loop = true;
+            const newSource = this.audioContext.createBufferSource();
+            newSource.buffer = this.audioBuffers.get(newTrack.url);
+            newSource.loop = true;
 
-        // Apply playback rate based on intensity
-        const speedMultiplier = 1 + ((intensity - 3) * audioConfig.intensitySpeedChange);
-        newSource.playbackRate.value = speedMultiplier;
+            const speedMultiplier = 1 + ((intensity - 3) * audioConfig.intensitySpeedChange);
+            newSource.playbackRate.value = speedMultiplier;
 
-        // Connect new source to its gain node
-        newSource.connect(newGainNode);
+            newSource.connect(newGainNode);
 
-        // Set up crossfade
-        const now = this.audioContext.currentTime;
-        const fadeTime = audioConfig.fadeOutDuration;
+            const now = this.audioContext.currentTime;
+            const fadeTime = audioConfig.fadeOutDuration;
 
-        // Fade out current track
-        this.gainNode.gain.linearRampToValueAtTime(0, now + fadeTime);
+            this.gainNode.gain.linearRampToValueAtTime(0, now + fadeTime);
+            newGainNode.gain.setValueAtTime(0, now);
+            newGainNode.gain.linearRampToValueAtTime(this.currentVolume / 100, now + fadeTime);
 
-        // Fade in new track
-        newGainNode.gain.setValueAtTime(0, now);
-        newGainNode.gain.linearRampToValueAtTime(this.currentVolume / 100, now + fadeTime);
+            newSource.start(0);
 
-        // Start new track
-        newSource.start(0);
-
-        // Clean up after crossfade
-        setTimeout(() => {
-            if (this.currentSource) {
-                this.currentSource.stop();
-            }
-            this.currentSource = newSource;
-            this.currentTrack = newTrack;
-            this.gainNode = newGainNode;
+            setTimeout(() => {
+                if (this.currentSource) {
+                    this.currentSource.stop();
+                }
+                this.currentSource = newSource;
+                this.currentTrack = newTrack;
+                this.gainNode = newGainNode;
+                this.crossfadeInProgress = false;
+            }, fadeTime * 1000);
+        } catch (error) {
+            console.error("Error in crossfadeToNewTrack:", error);
             this.crossfadeInProgress = false;
-        }, fadeTime * 1000);
+            throw error;
+        }
     }
 
     stopBeat() {
         if (this.currentSource) {
-            const now = this.audioContext.currentTime;
+            try {
+                const now = this.audioContext.currentTime;
 
-            // Fade out
-            this.gainNode.gain.cancelScheduledValues(now);
-            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-            this.gainNode.gain.linearRampToValueAtTime(0, now + audioConfig.fadeOutDuration);
+                this.gainNode.gain.cancelScheduledValues(now);
+                this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+                this.gainNode.gain.linearRampToValueAtTime(0, now + audioConfig.fadeOutDuration);
 
-            // Stop the source after fade out
-            setTimeout(() => {
-                if (this.currentSource) {
-                    this.currentSource.stop();
-                    this.currentSource = null;
-                    this.currentTrack = null;
-                }
-                this.crossfadeInProgress = false;
-            }, audioConfig.fadeOutDuration * 1000);
+                setTimeout(() => {
+                    if (this.currentSource) {
+                        this.currentSource.stop();
+                        this.currentSource = null;
+                        this.currentTrack = null;
+                    }
+                    this.crossfadeInProgress = false;
+                }, audioConfig.fadeOutDuration * 1000);
+            } catch (error) {
+                console.error("Error in stopBeat:", error);
+            }
         }
     }
 
