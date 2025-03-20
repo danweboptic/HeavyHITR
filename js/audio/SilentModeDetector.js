@@ -2,14 +2,29 @@ export default class SilentModeDetector {
     constructor() {
         this.noticeShown = false;
         this.noticeDismissed = this.getNoticeDismissedState();
+        this.lastCheckTime = 0;
+        this.checkDelay = 500; // Minimum delay between checks (ms)
     }
 
-    async checkSilentMode() {
+    async checkSilentMode(volumeLevel = null) {
         if (this.noticeDismissed) {
             return;
         }
 
+        // Prevent too frequent checks
+        const now = Date.now();
+        if (now - this.lastCheckTime < this.checkDelay) {
+            return;
+        }
+        this.lastCheckTime = now;
+
         try {
+            // If volume level is provided and it's above threshold, hide notice
+            if (volumeLevel !== null && volumeLevel > 0) {
+                this.hideNotice();
+                return;
+            }
+
             // Create a temporary audio context for detection
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
@@ -31,6 +46,8 @@ export default class SilentModeDetector {
 
                 if (silence && !this.noticeShown) {
                     this.showSilentModeNotice();
+                } else if (!silence && this.noticeShown) {
+                    this.hideNotice();
                 }
 
                 audioContext.close();
@@ -49,6 +66,14 @@ export default class SilentModeDetector {
         }
     }
 
+    hideNotice() {
+        const notice = document.getElementById('silentModeNotice');
+        if (notice && this.noticeShown) {
+            notice.classList.add('hidden');
+            this.noticeShown = false;
+        }
+    }
+
     setupNoticeEventListeners() {
         const closeButton = document.getElementById('closeSilentNotice');
         if (closeButton) {
@@ -63,6 +88,7 @@ export default class SilentModeDetector {
         if (notice) {
             notice.classList.add('hidden');
             this.noticeDismissed = true;
+            this.noticeShown = false;
             this.saveNoticeDismissedState();
         }
     }

@@ -119,6 +119,8 @@ class App {
                     await this.audioManager.ensureAudioContext();
                     this.audioManager.setVolume(volume);
                     this.speechManager.setVolume(volume);
+                    // Add this line to check silent mode when volume changes
+                    await this.audioManager.silentModeDetector.checkSilentMode(volume);
                 });
             }
 
@@ -129,13 +131,16 @@ class App {
                     this.audioManager.setVolume(volume);
                     this.speechManager.setVolume(volume);
                     this.uiController.updateVolumeIcon(volume);
+                    // Add this line to check silent mode when volume changes
+                    await this.audioManager.silentModeDetector.checkSilentMode(volume);
                 });
 
-                // Set initial volume
+                // Set initial volume and check silent mode
                 const initialVolume = parseInt(volumeControl.value);
                 this.audioManager.setVolume(initialVolume);
                 this.speechManager.setVolume(initialVolume);
                 this.uiController.updateVolumeIcon(initialVolume);
+                await this.audioManager.silentModeDetector.checkSilentMode(initialVolume);
             }
 
             // Intensity slider

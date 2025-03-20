@@ -123,6 +123,9 @@ class AudioManager {
             this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
             this.gainNode.gain.linearRampToValueAtTime(gainValue, now + 0.05);
         }
+
+        // Check silent mode when volume changes
+        this.silentModeDetector.checkSilentMode(volume);
     }
 
     getIntensityTracks(intensity) {
