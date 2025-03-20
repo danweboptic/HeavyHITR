@@ -132,7 +132,11 @@ class App {
     }
 
     handleGenerateWorkout() {
+        console.log('=== Starting workout generation ===');
         try {
+            // Log initial state
+            console.log('1. Getting form elements...');
+
             // Get and validate form elements
             const numRoundsInput = document.getElementById('numRounds');
             const roundDurationInput = document.getElementById('roundDuration');
@@ -141,12 +145,23 @@ class App {
             const workoutTypeInput = document.getElementById('workoutType');
             const workoutNameInput = document.getElementById('workoutName');
 
+            // Log form values
+            console.log('Form values:', {
+                numRounds: numRoundsInput?.value,
+                roundDuration: roundDurationInput?.value,
+                restDuration: restDurationInput?.value,
+                intensity: intensityLevelInput?.value,
+                workoutType: workoutTypeInput?.value,
+                workoutName: workoutNameInput?.value
+            });
+
             // Validate all required elements exist
             if (!numRoundsInput || !roundDurationInput || !restDurationInput ||
                 !intensityLevelInput || !workoutTypeInput) {
                 throw new Error('Required form elements are missing');
             }
 
+            console.log('2. Creating settings object...');
             // Validate and parse inputs
             const settings = {
                 numRounds: parseInt(numRoundsInput.value),
@@ -157,35 +172,47 @@ class App {
                 exerciseTemplates: exerciseTemplates
             };
 
+            console.log('Settings object:', settings);
+
             // Validate numeric values
             if (isNaN(settings.numRounds) || isNaN(settings.roundDuration) ||
                 isNaN(settings.restDuration) || isNaN(settings.intensity)) {
                 throw new Error('Invalid numeric values in form');
             }
 
+            console.log('3. Setting workout name...');
             // Set workout name
             settings.workoutName = workoutNameInput?.value ||
                 `${exerciseTemplates[settings.workoutType === 'pyramid' ? 'intermediate' : settings.workoutType].name} Workout (${new Date().toLocaleDateString()})`;
 
+            console.log('Final workout name:', settings.workoutName);
+
+            console.log('4. Generating workout...');
             // Generate workout
             const workout = this.workoutManager.generateWorkout(settings);
+            console.log('Generated workout:', workout);
+
             if (!workout) {
                 throw new Error('Failed to generate workout');
             }
 
+            console.log('5. Updating UI...');
             // Update UI first
             this.uiController.updateUI(workout);
 
+            console.log('6. Showing workout tab...');
             // Then show the workout tab
             this.uiController.showWorkoutTab();
 
+            console.log('7. Saving workout...');
             // Save the workout last
             this.storageManager.saveWorkout(workout);
 
-            console.log('Workout generated successfully:', workout);
+            console.log('=== Workout generation completed successfully ===');
 
         } catch (error) {
             console.error('Error generating workout:', error);
+            console.error('Error stack:', error.stack);
             this.uiController.showError(`Failed to generate workout: ${error.message}`);
         }
     }

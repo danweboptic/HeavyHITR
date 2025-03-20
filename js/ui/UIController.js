@@ -61,14 +61,33 @@ class UIController {
     }
 
     switchTab(tabId) {
+        console.log(`=== Switching to tab: ${tabId} ===`);
+
         // Validate tab exists
-        if (!this.tabConfig[tabId]) return;
+        if (!this.tabConfig[tabId]) {
+            console.error(`Invalid tab ID: ${tabId}`);
+            return;
+        }
 
         // Don't switch to workout tab if it's hidden
         const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
+        console.log('Workout tab element:', workoutTab);
+        console.log('Workout tab classes:', workoutTab?.classList.toString());
+
         if (tabId === 'workout' && workoutTab?.classList.contains('hidden')) {
+            console.log('Prevented switch to hidden workout tab');
             return;
         }
+
+        console.log('Current tab panels and their visibility:');
+        Object.keys(this.tabConfig).forEach(id => {
+            const panel = document.getElementById(this.tabConfig[id].panelId);
+            console.log(`${id} panel:`, {
+                exists: !!panel,
+                hidden: panel?.classList.contains(this.tabClasses.panel.hidden),
+                classes: panel?.classList.toString()
+            });
+        });
 
         // Hide all panels first
         Object.keys(this.tabConfig).forEach(id => {
@@ -81,7 +100,10 @@ class UIController {
         // Show only the target panel
         const targetPanel = document.getElementById(this.tabConfig[tabId].panelId);
         if (targetPanel) {
+            console.log(`Showing panel for ${tabId}`);
             targetPanel.classList.remove(this.tabClasses.panel.hidden);
+        } else {
+            console.error(`Target panel not found for ${tabId}`);
         }
 
         // Update all tab buttons
@@ -90,26 +112,46 @@ class UIController {
             if (button && !button.classList.contains('hidden')) {
                 // Update button state
                 const isActive = id === tabId;
-                button.className = `${this.tabClasses.button.base} ${
+                const newClassName = `${this.tabClasses.button.base} ${
                     isActive ? this.tabClasses.button.active : this.tabClasses.button.inactive
                 }`;
+                console.log(`Updating ${id} button:`, {
+                    active: isActive,
+                    newClasses: newClassName
+                });
+                button.className = newClassName;
                 button.setAttribute('aria-selected', isActive.toString());
             }
         });
 
+        console.log(`Tab switch completed. New current tab: ${tabId}`);
         this.currentTab = tabId;
     }
 
     showWorkoutTab() {
+        console.log('=== Starting showWorkoutTab ===');
         const workoutTab = document.getElementById(this.tabConfig.workout.buttonId);
+        console.log('Workout tab element:', workoutTab);
+
         if (workoutTab) {
+            console.log('Workout tab found, current classes:', workoutTab.classList.toString());
             workoutTab.classList.remove('hidden');
+            console.log('Removed hidden class, new classes:', workoutTab.classList.toString());
+
+            // Log the current state before switching
+            console.log('Current tab:', this.currentTab);
+            console.log('Attempting to switch to workout tab...');
+
             // Force a small delay to ensure the class removal is processed
             setTimeout(() => {
+                console.log('Executing delayed tab switch...');
                 this.switchTab('workout');
+                console.log('Tab switch completed');
             }, 0);
         } else {
-            console.error('Workout tab element not found');
+            console.error('Workout tab element not found!');
+            console.log('Tab config:', this.tabConfig);
+            console.log('Expected button ID:', this.tabConfig.workout.buttonId);
         }
     }
 
