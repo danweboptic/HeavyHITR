@@ -328,32 +328,6 @@ class App {
             errorMessage.remove();
         }, 5000);
     }
-
-    async cleanup() {
-        try {
-            // Stop and cleanup workout if running
-            if (this.workoutManager) {
-                await this.workoutManager.reset();
-            }
-
-            // Cleanup audio resources
-            if (this.audioManager) {
-                await this.audioManager.dispose();
-            }
-
-            // Cleanup speech resources
-            if (this.speechManager) {
-                this.speechManager.stop();
-            }
-
-            // Cleanup visualization
-            if (this.visualizationManager) {
-                this.visualizationManager.cleanup();
-            }
-        } catch (error) {
-            console.error('Error during app cleanup:', error);
-        }
-    }
 }
 
 // Initialize the application when the DOM is ready
