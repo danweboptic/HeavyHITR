@@ -33,11 +33,16 @@ class App {
     async initialize() {
         console.log('App initialize started');
         try {
+            // Ensure UI is initialized first
+            if (!this.uiController) {
+                throw new Error('UIController not initialized');
+            }
+
             await this.audioManager.initialize();
             await this.speechManager.initialize();
             this.visualizationManager.initialize();
             this.applyTheme();
-            await this.setupEventListeners(); // Made async
+            await this.setupEventListeners();
             this.uiController.updateWorkoutHistory(this.storageManager.getWorkoutHistory());
             console.log('App initialization completed');
         } catch (error) {

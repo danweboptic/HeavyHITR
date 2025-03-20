@@ -39,7 +39,55 @@ class UIController {
 
         this.currentTab = 'config';
         this.initializeTabs();
+
+        // Add workoutType select reference
+        this.workoutTypeSelect = document.getElementById('workoutType');
+
+        // Initialize the workout type select
+        this.initializeWorkoutTypeSelect();
     }
+
+    initializeWorkoutTypeSelect() {
+        try {
+            console.log('Initializing workout type select');
+            if (!this.workoutTypeSelect) {
+                console.error('Workout type select element not found');
+                return;
+            }
+
+            // Clear existing options
+            this.workoutTypeSelect.innerHTML = '';
+
+            // Import exercise templates
+            import('../data/ExerciseTemplates.js').then(module => {
+                const exerciseTemplates = module.default;
+                console.log('Available workout types:', Object.keys(exerciseTemplates));
+
+                // Create and append options for each template type
+                Object.entries(exerciseTemplates).forEach(([value, template]) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = template.name;
+
+                    // Set beginner as default selected option
+                    if (value === 'beginner') {
+                        option.selected = true;
+                    }
+
+                    this.workoutTypeSelect.appendChild(option);
+                });
+
+                console.log('Workout type select populated successfully');
+            }).catch(error => {
+                console.error('Failed to load exercise templates:', error);
+                this.showError('Failed to load workout types');
+            });
+        } catch (error) {
+            console.error('Error initializing workout type select:', error);
+            this.showError('Failed to initialize workout types');
+        }
+    }
+
 
     initializeTabs() {
         // Initialize tab event listeners
