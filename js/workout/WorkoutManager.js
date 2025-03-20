@@ -14,7 +14,8 @@ class WorkoutManager {
             isRunning: false,
             status: 'ready',
             timeRemaining: CONFIG.COUNTDOWN_TIME,
-            timer: null
+            timer: null,
+            isPaused: false
         };
     }
 
@@ -93,36 +94,123 @@ class WorkoutManager {
         this.uiController.updateUI(this.workout);
     }
 
-    start() {
-        await this.audioManager.ensureAudioContext();
-        this.workout.isRunning = true;
-
-        if (this.workout.status === 'ready') {
-            this.audioManager.startBeat();
-            this.speechManager.speak("Get ready! Starting in 5 seconds.", true);
+    async start() {
+        if (this.workout.isPaused) {
+            return this.resume();
         }
 
-        this.workout.timer = setInterval(() => this.update(), 1000);
+        try {
+            await this.audioManager.ensureAudioContext();
+
+            this.workout.isRunning = true;
+            this.workout.isPaused = false;
+
+            if (this.workout.status === 'ready') {
+                await this.audioManager.startBeat();
+                await this.speechManager.speak("Get ready! Starting in 5 seconds.", true);
+            }
+
+            // Use requestAnimationFrame for better timer accuracy
+            let lastTime = performance.now();
+            const timerCallback = (currentTime) => {
+                if (!this.workout.isRunning) return;
+
+                const deltaTime = currentTime - lastTime;
+                if (deltaTime >= 1000) { // Update every second
+                    this.update();
+                    lastTime = currentTime;
+                }
+
+                if (this.workout.isRunning) {
+                    this.workout.timer = requestAnimationFrame(timerCallback);
+                }
+            };
+
+            this.workout.timer = requestAnimationFrame(timerCallback);
+        } catch (error) {
+            console.error('Error starting workout:', error);
+            throw new Error('Failed to start workout. Please check your audio settings.');
+        }
     }
 
-    pause() {
-        this.workout.isRunning = false;
-        clearInterval(this.workout.timer);
-        this.speechManager.stop();
-        this.audioManager.stopBeat();
+    async pause() {
+        try {
+            this.workout.isRunning = false;
+            this.workout.isPaused = true;
+
+            if (this.workout.timer) {
+                cancelAnimationFrame(this.workout.timer);
+                this.workout.timer = null;
+            }
+
+            await this.audioManager.stopBeat();
+            await this.speechManager.stop();
+
+            // Save current state for resume
+            this.workout.pauseState = {
+                timeRemaining: this.workout.timeRemaining,
+                status: this.workout.status,
+                currentRound: this.workout.currentRound
+            };
+
+            this.uiController.updateUI(this.workout);
+        } catch (error) {
+            console.error('Error pausing workout:', error);
+            throw new Error('Failed to pause workout');
+        }
     }
 
-    reset() {
-        clearInterval(this.workout.timer);
-        this.audioManager.stopBeat();
-        this.speechManager.stop();
+    async resume() {
+        try {
+            if (!this.workout.pauseState) {
+                throw new Error('No pause state found');
+            }
 
-        this.workout.currentRound = 0;
-        this.workout.isRunning = false;
-        this.workout.status = 'ready';
-        this.workout.timeRemaining = CONFIG.COUNTDOWN_TIME;
+            await this.audioManager.ensureAudioContext();
 
-        this.uiController.updateUI(this.workout);
+            // Restore state from pause
+            this.workout.timeRemaining = this.workout.pauseState.timeRemaining;
+            this.workout.status = this.workout.pauseState.status;
+            this.workout.currentRound = this.workout.pauseState.currentRound;
+
+            this.workout.isRunning = true;
+            this.workout.isPaused = false;
+
+            // Resume audio if in a round
+            if (this.workout.status === 'round') {
+                const roundData = this.workout.rounds[this.workout.currentRound - 1];
+                await this.audioManager.startBeat(roundData.intensity);
+            }
+
+            await this.start(); // This will restart the timer
+        } catch (error) {
+            console.error('Error resuming workout:', error);
+            throw new Error('Failed to resume workout');
+        }
+    }
+
+    async reset() {
+        try {
+            if (this.workout.timer) {
+                cancelAnimationFrame(this.workout.timer);
+                this.workout.timer = null;
+            }
+
+            await this.audioManager.stopBeat();
+            await this.speechManager.stop();
+
+            this.workout.currentRound = 0;
+            this.workout.isRunning = false;
+            this.workout.isPaused = false;
+            this.workout.status = 'ready';
+            this.workout.timeRemaining = CONFIG.COUNTDOWN_TIME;
+            this.workout.pauseState = null;
+
+            this.uiController.updateUI(this.workout);
+        } catch (error) {
+            console.error('Error resetting workout:', error);
+            throw new Error('Failed to reset workout');
+        }
     }
 
     update() {

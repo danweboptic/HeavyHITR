@@ -70,8 +70,15 @@ class App {
             const startPauseBtn = document.getElementById('startPauseBtn');
             if (startPauseBtn) {
                 startPauseBtn.addEventListener('click', async () => {
-                    await this.audioManager.ensureAudioContext();
-                    this.handleStartPause();
+                    try {
+                        startPauseBtn.disabled = true;  // Prevent double-clicks
+                        await this.handleStartPause();
+                    } catch (error) {
+                        console.error('Error handling start/pause:', error);
+                        this.uiController.showError('Failed to control workout');
+                    } finally {
+                        startPauseBtn.disabled = false;
+                    }
                 });
             }
 
@@ -232,18 +239,20 @@ class App {
         }
     }
 
-    handleStartPause() {
+    async handleStartPause() {
         try {
             if (this.workoutManager.isRunning()) {
-                this.workoutManager.pause();
+                await this.workoutManager.pause();
                 this.uiController.updateStartPauseButton('Resume');
             } else {
-                this.workoutManager.start();
+                // Ensure audio context is initialized before starting
+                await this.audioManager.ensureAudioContext();
+                await this.workoutManager.start();
                 this.uiController.updateStartPauseButton('Pause');
             }
         } catch (error) {
             console.error('Error in start/pause:', error);
-            this.uiController.showError('Error controlling workout. Please try again.');
+            this.uiController.showError('Error controlling workout. Please check your device audio settings and try again.');
         }
     }
 
@@ -259,23 +268,24 @@ class App {
         }
     }
 
-    handleBackToConfig() {
+    async handleBackToConfig() {
         try {
             // Stop the workout and reset it first
-            this.workoutManager.reset();
+            await this.workoutManager.reset();
 
             // Hide workout tab and ensure we switch to config view
             this.uiController.hideWorkoutTab();
+            this.uiController.switchTab('config');
 
             // Reset any workout-specific UI elements
             const startPauseBtn = document.getElementById('startPauseBtn');
             if (startPauseBtn) {
                 startPauseBtn.textContent = 'Start';
+                startPauseBtn.disabled = false;
             }
 
             // Clear any existing workout data
             this.currentWorkout = null;
-
         } catch (error) {
             console.error('Error returning to config:', error);
             this.uiController.showError('Error returning to settings. Please try again.');
